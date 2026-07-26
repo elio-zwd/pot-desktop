@@ -49,15 +49,15 @@ jobs:
         run: |
           set -euo pipefail
           curl -L --fail --retry 3 --retry-delay 2 \
-            -o /tmp/ecdict.mini.csv \
-            "https://raw.githubusercontent.com/skywind3000/ECDICT/${ECDICT_COMMIT}/ecdict.mini.csv"
-          head -n 1 /tmp/ecdict.mini.csv | grep -q '^word,phonetic,definition,translation,'
+            -o /tmp/ecdict.csv \
+            "https://raw.githubusercontent.com/skywind3000/ECDICT/${ECDICT_COMMIT}/ecdict.csv"
+          head -n 1 /tmp/ecdict.csv | grep -q '^word,phonetic,definition,translation,'
 
       - name: Build offline dictionary
         run: |
           set -euo pipefail
           python plugins/code-identifier/scripts/build_dictionary.py \
-            --input /tmp/ecdict.mini.csv \
+            --input /tmp/ecdict.csv \
             --output plugins/code-identifier/dictionary.db \
             --meta plugins/code-identifier/dictionary.meta.json \
             --source-commit "${ECDICT_COMMIT}"
@@ -73,6 +73,7 @@ jobs:
 
           root = Path('plugins/code-identifier')
           meta = json.loads((root / 'dictionary.meta.json').read_text(encoding='utf-8'))
+          assert meta['source_file'] == 'ecdict.csv'
           assert meta['source_commit'] == 'bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b'
           assert meta['source_license'] == 'MIT'
 
@@ -96,7 +97,7 @@ jobs:
               'samples': sample_rows,
           })
           assert entry_count == meta['entries'], (entry_count, meta)
-          assert entry_count > 100, meta
+          assert entry_count > 100000, meta
           assert translated_count == entry_count
           assert sample_rows and all(row[0] and row[1] and row[2].strip() for row in sample_rows)
           PY
