@@ -33,13 +33,24 @@ jobs:
         working-directory: plugins/code-identifier
         run: npm test
 
+      - name: Validate plugin manifest
+        run: |
+          set -euo pipefail
+          node -e "const info=require('./plugins/code-identifier/info.json'); if(info.plugin_type!=='translate'||!info.id||!info.icon||!Array.isArray(info.needs)) process.exit(1)"
+          test -f plugins/code-identifier/main.js
+          test -f plugins/code-identifier/info.json
+          test -f plugins/code-identifier/icon.svg
+
       - name: Package Pot plugin
         run: |
+          set -euo pipefail
           mkdir -p dist
           cd plugins/code-identifier
           zip -j ../../dist/plugin.com.elio.code-identifier.potext main.js info.json icon.svg
           cd ../..
-          unzip -l dist/plugin.com.elio.code-identifier.potext
+          actual="$(unzip -Z1 dist/plugin.com.elio.code-identifier.potext | sort)"
+          expected="$(printf '%s\n' icon.svg info.json main.js | sort)"
+          test "$actual" = "$expected"
 
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v4
