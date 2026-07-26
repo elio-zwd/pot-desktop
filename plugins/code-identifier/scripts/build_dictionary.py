@@ -142,7 +142,7 @@ def main() -> None:
     metadata = {
         "schema_version": SCHEMA_VERSION,
         "source": "skywind3000/ECDICT",
-        "source_file": "ecdict.mini.csv",
+        "source_file": args.input.name,
         "source_commit": args.source_commit,
         "source_license": "MIT",
         **stats,
