@@ -21,6 +21,16 @@
       }
     },
     {
+      "key": "dictionaryMode",
+      "display": "本地词典显示",
+      "type": "select",
+      "options": {
+        "both": "编程术语 + 普通词义",
+        "programming": "仅编程术语优先",
+        "general": "仅普通英语词典"
+      }
+    },
+    {
       "key": "identifierType",
       "display": "标识符类型",
       "type": "select",

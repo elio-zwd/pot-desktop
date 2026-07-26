@@ -1,0 +1,14 @@
+        formatGeneralDictionary,
+        lookupGeneralDictionary,
+        prepareIdentifier,
+        programmingPhraseParts,
+        splitIdentifier,
+        tokenizeChinese,
+        toCamelCase,
+        toKebabCase,
+        toPascalCase,
+        toScreamingSnakeCase,
+        toSnakeCase,
+        translate
+    };
+}
