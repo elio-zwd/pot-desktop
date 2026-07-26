@@ -17,6 +17,7 @@ const KNOWN_ACRONYMS = [
 ];
 
 const ACRONYM_MAP = new Map(KNOWN_ACRONYMS.map((item) => [item.toLowerCase(), item]));
+const SORTED_ACRONYMS = [...KNOWN_ACRONYMS].sort((a, b) => b.length - a.length);
 
 const ACTION_WORDS = new Set([
     'add', 'build', 'calculate', 'check', 'clear', 'close', 'convert', 'create',
@@ -27,6 +28,10 @@ const ACTION_WORDS = new Set([
 ]);
 
 const BOOLEAN_PREFIXES = new Set(['is', 'has', 'can', 'should', 'needs', 'supports', 'enabled', 'disabled']);
+const FUNCTION_PREFIXES = new Set([...ACTION_WORDS, 'on']);
+const FUNCTION_SUFFIXES = new Set([
+    'callback', 'handler', 'hook', 'init', 'initialize', 'listener', 'process', 'processor'
+]);
 
 const ENGLISH_TO_CHINESE = {
     add: '添加', address: '地址', buffer: '缓冲区', build: '构建', calculate: '计算',
@@ -46,7 +51,9 @@ const ENGLISH_TO_CHINESE = {
     set: '设置', should: '应当', start: '启动', state: '状态', status: '状态', stop: '停止',
     successful: '成功', supports: '支持', task: '任务', timeout: '超时', timer: '定时器',
     update: '更新', user: '用户', validate: '校验', value: '值', variable: '变量', verify: '验证',
-    wait: '等待', watchdog: '看门狗', write: '写入'
+    wait: '等待', watchdog: '看门狗', write: '写入', object: '对象', valid: '有效',
+    callback: '回调', handler: '处理函数', listener: '监听器', process: '处理', processor: '处理器',
+    free: 'Free', irq: 'IRQ', exti: 'EXTI', index: '索引', interval: '间隔', offset: '偏移'
 };
 
 const CHINESE_PHRASES = {
@@ -113,14 +120,38 @@ function normalizeWord(token) {
     return clean.toLowerCase();
 }
 
-function splitChunk(chunk) {
-    const trimmed = chunk.trim();
-    if (!trimmed) return [];
+function findKnownAcronym(chunk) {
+    let best = null;
 
-    const exactAcronym = canonicalAcronym(trimmed);
-    if (exactAcronym) return [exactAcronym];
+    for (let index = 0; index < chunk.length; index += 1) {
+        for (const acronym of SORTED_ACRONYMS) {
+            const nextCharacter = chunk[index + acronym.length];
+            const leftBoundary = index === 0 || /[a-z0-9]/.test(chunk[index - 1]);
+            const rightBoundary = nextCharacter === undefined || /[A-Z0-9]/.test(nextCharacter);
+            const exactMatch =
+                leftBoundary &&
+                rightBoundary &&
+                chunk.startsWith(acronym, index);
+            const digitAcronymAtStart =
+                index === 0 &&
+                /\d/.test(acronym) &&
+                chunk.slice(0, acronym.length).toLowerCase() === acronym.toLowerCase() &&
+                rightBoundary;
 
-    const separated = trimmed
+            if (exactMatch || digitAcronymAtStart) {
+                if (!best || index < best.index || (index === best.index && acronym.length > best.acronym.length)) {
+                    best = { index, acronym };
+                }
+            }
+        }
+        if (best && best.index === index) break;
+    }
+
+    return best;
+}
+
+function splitChunkWithoutKnownAcronyms(chunk) {
+    const separated = chunk
         .replace(/([a-z])([A-Z])/g, '$1 $2')
         .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
         .replace(/([A-Za-z])(\d)/g, '$1 $2')
@@ -132,10 +163,30 @@ function splitChunk(chunk) {
         .filter(Boolean);
 }
 
+function splitChunk(chunk) {
+    const trimmed = chunk.trim();
+    if (!trimmed) return [];
+
+    const exactAcronym = canonicalAcronym(trimmed);
+    if (exactAcronym) return [exactAcronym];
+
+    const match = findKnownAcronym(trimmed);
+    if (!match) return splitChunkWithoutKnownAcronyms(trimmed);
+
+    const prefix = trimmed.slice(0, match.index);
+    const suffix = trimmed.slice(match.index + match.acronym.length);
+
+    return [
+        ...splitChunk(prefix),
+        match.acronym,
+        ...splitChunk(suffix)
+    ];
+}
+
 function splitIdentifier(input) {
     const cleaned = String(input)
         .trim()
-        .replace(/^['"`]+|['"`;]+$/g, '')
+        .replace(/^[\'"`]+|[\'"`;]+$/g, '')
         .replace(/\(\s*\)$/, '')
         .replace(/[\s_.\-/:\\]+/g, ' ');
 
@@ -224,12 +275,24 @@ function toKebabCase(words) {
 function detectIdentifierType(input, words) {
     const original = String(input).trim();
     const lowerWords = words.map(lowerWord);
+    const firstWord = lowerWords[0];
+    const lastWord = lowerWords[lowerWords.length - 1];
 
     if (/^[A-Z][A-Z0-9_]*$/.test(original) && original.includes('_')) return 'constant';
-    if (BOOLEAN_PREFIXES.has(lowerWords[0])) return 'boolean';
-    if (lowerWords.slice(0, 3).some((word) => ACTION_WORDS.has(word))) return 'function';
-    if (/^[A-Z][A-Za-z0-9]*$/.test(original) && !/^[A-Z0-9]+$/.test(original)) return 'class';
+    if (BOOLEAN_PREFIXES.has(firstWord)) return 'boolean';
     if (/[.\-]/.test(original)) return 'file';
+    if (/^[A-Z][A-Za-z0-9]*$/.test(original) && !/^[A-Z0-9]+$/.test(original)) return 'class';
+
+    if (FUNCTION_PREFIXES.has(firstWord)) return 'function';
+    if (FUNCTION_SUFFIXES.has(lastWord)) return 'function';
+
+    const vendorActionIndex = lowerWords.findIndex((word, index) =>
+        index > 0 &&
+        ACTION_WORDS.has(word) &&
+        words.slice(0, index).every((prefix) => isAcronym(prefix))
+    );
+    if (vendorActionIndex >= 0) return 'function';
+
     return 'variable';
 }
 
@@ -242,11 +305,18 @@ function applyTypeHints(words, type) {
 }
 
 function toChineseDescription(words) {
-    return words.map((word) => {
+    const parts = words.map((word) => {
         const acronym = canonicalAcronym(word);
         if (acronym) return acronym;
         return ENGLISH_TO_CHINESE[lowerWord(word)] || word;
-    }).join('');
+    });
+
+    return parts.reduce((result, part) => {
+        if (!result) return part;
+        const previousIsAscii = /[A-Za-z0-9]$/.test(result);
+        const currentIsAscii = /^[A-Za-z0-9]/.test(part);
+        return result + (previousIsAscii || currentIsAscii ? ' ' : '') + part;
+    }, '');
 }
 
 function formatByStyle(words, style, acronymStyle) {
