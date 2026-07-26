@@ -7,10 +7,10 @@ The generated `dictionary.db` is derived from:
 - Project: ECDICT — Free English to Chinese Dictionary Database
 - Repository: https://github.com/skywind3000/ECDICT
 - Pinned source commit: `bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b`
-- Source file: `ecdict.mini.csv`
+- Source file: `ecdict.csv`
 - License: MIT
 
-The build keeps only single-token entries with Chinese translations and adds aliases from ECDICT's `exchange` field. The original data is not modified in place; it is transformed into a compact SQLite database for offline lookup.
+The build keeps single-token entries with Chinese translations and adds aliases from ECDICT's `exchange` field. The original data is not modified in place; it is transformed into a compact SQLite database for offline lookup.
 
 ### MIT License
 
