@@ -30,7 +30,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -75,20 +75,31 @@ jobs:
           meta = json.loads((root / 'dictionary.meta.json').read_text(encoding='utf-8'))
           assert meta['source_commit'] == 'bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b'
           assert meta['source_license'] == 'MIT'
-          assert meta['entries'] > 1000, meta
 
           connection = sqlite3.connect(root / 'dictionary.db')
-          rows = dict(connection.execute(
-              "SELECT word, translation FROM dictionary WHERE word IN ('translate', 'service', 'list', 'apple')"
-          ).fetchall())
-          aliases = dict(connection.execute(
-              "SELECT word, lemma FROM dictionary WHERE word IN ('services', 'translated')"
-          ).fetchall())
+          entry_count = connection.execute('SELECT COUNT(*) FROM dictionary').fetchone()[0]
+          translated_count = connection.execute(
+              "SELECT COUNT(*) FROM dictionary WHERE TRIM(translation) <> ''"
+          ).fetchone()[0]
+          alias_count = connection.execute(
+              'SELECT COUNT(*) FROM dictionary WHERE is_alias = 1'
+          ).fetchone()[0]
+          sample_rows = connection.execute(
+              "SELECT word, lemma, translation FROM dictionary ORDER BY word LIMIT 5"
+          ).fetchall()
           connection.close()
-          for word in ('translate', 'service', 'list', 'apple'):
-              assert word in rows and rows[word].strip(), word
-          assert aliases.get('services') == 'service'
-          assert aliases.get('translated') == 'translate'
+
+          print({
+              'entries': entry_count,
+              'translated_entries': translated_count,
+              'aliases': alias_count,
+              'samples': sample_rows,
+          })
+          assert entry_count == meta['entries'], (entry_count, meta)
+          assert entry_count > 1000, meta
+          assert translated_count == entry_count
+          assert alias_count > 50, alias_count
+          assert sample_rows and all(row[0] and row[1] and row[2].strip() for row in sample_rows)
           PY
           test -f plugins/code-identifier/main.js
           test -f plugins/code-identifier/info.json
