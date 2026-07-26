@@ -293,7 +293,7 @@ function analyzeIdentifier(text, config = {}) {
 
     const configuredType = config.identifierType || 'auto';
     const detectedType = configuredType === 'auto'
-        ? (isChineseInput ? 'variable' : detectIdentifierType(input, tokenized.words))
+        ? detectIdentifierType(input, tokenized.words)
         : configuredType;
     const words = applyTypeHints(tokenized.words, detectedType);
     const acronymStyle = config.acronymStyle || 'standard';
