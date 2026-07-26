@@ -1,0 +1,49 @@
+name: Code Identifier Plugin
+
+on:
+  push:
+    branches:
+      - feat/code-identifier-plugin
+    paths:
+      - plugins/code-identifier/**
+      - .github/workflows/code-identifier-plugin.yml
+  pull_request:
+    paths:
+      - plugins/code-identifier/**
+      - .github/workflows/code-identifier-plugin.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run unit tests
+        working-directory: plugins/code-identifier
+        run: npm test
+
+      - name: Package Pot plugin
+        run: |
+          mkdir -p dist
+          cd plugins/code-identifier
+          zip -j ../../dist/plugin.com.elio.code-identifier.potext main.js info.json icon.svg
+          cd ../..
+          unzip -l dist/plugin.com.elio.code-identifier.potext
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pot-code-identifier-plugin
+          path: dist/plugin.com.elio.code-identifier.potext
+          if-no-files-found: error
