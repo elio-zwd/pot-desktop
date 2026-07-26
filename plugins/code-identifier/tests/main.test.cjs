@@ -41,6 +41,7 @@ test('supports common Chinese naming description', () => {
         analyzeIdentifier('读取用户配置', { identifierType: 'function', outputStyle: 'camel' }),
         'readUserConfig'
     );
+    assert.match(analyzeIdentifier('读取用户配置'), /识别类型：函数名/);
 });
 
 test('adds boolean prefix in boolean mode', () => {
