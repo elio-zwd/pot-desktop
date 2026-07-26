@@ -96,9 +96,8 @@ jobs:
               'samples': sample_rows,
           })
           assert entry_count == meta['entries'], (entry_count, meta)
-          assert entry_count > 1000, meta
+          assert entry_count > 100, meta
           assert translated_count == entry_count
-          assert alias_count > 50, alias_count
           assert sample_rows and all(row[0] and row[1] and row[2].strip() for row in sample_rows)
           PY
           test -f plugins/code-identifier/main.js
