@@ -7,7 +7,7 @@
 `0.2.0`：增加双层本地词典。
 
 1. **编程术语层**：内置软件开发、Android、嵌入式、通信与机器人常用词的上下文译法。
-2. **普通英语层**：构建时从 ECDICT 精简词库生成 `dictionary.db`，运行时通过 SQLite 完全离线查询。
+2. **普通英语层**：构建时从 ECDICT 完整基础词库生成 `dictionary.db`，运行时通过 SQLite 完全离线查询。
 
 本版本不接入 Gemini，不包含 API Key 配置，也不会发送选中的代码或文本。
 
@@ -127,7 +127,7 @@ services（原形：service）
 bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b
 ```
 
-构建脚本只保留带中文释义的单词条目，并把词形变化写成离线查询别名。完整许可和转换说明见 `THIRD_PARTY_NOTICES.md`。
+使用的源文件是完整基础词库 `ecdict.csv`，而不是仅用于展示格式的 `ecdict.mini.csv`。构建脚本只保留带中文释义、适合标识符逐词查询的单词条目，并把可用的词形变化写成离线查询别名。完整许可和转换说明见 `THIRD_PARTY_NOTICES.md`。
 
 运行时：
 
@@ -152,11 +152,11 @@ python scripts/test_dictionary_build.py
 
 ```bash
 curl -L --fail \
-  -o /tmp/ecdict.mini.csv \
-  https://raw.githubusercontent.com/skywind3000/ECDICT/bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b/ecdict.mini.csv
+  -o /tmp/ecdict.csv \
+  https://raw.githubusercontent.com/skywind3000/ECDICT/bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b/ecdict.csv
 
 python scripts/build_dictionary.py \
-  --input /tmp/ecdict.mini.csv \
+  --input /tmp/ecdict.csv \
   --output dictionary.db \
   --meta dictionary.meta.json \
   --source-commit bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b
