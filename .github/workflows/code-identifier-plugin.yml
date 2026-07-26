@@ -3,7 +3,7 @@ name: Code Identifier Plugin
 on:
   push:
     branches:
-      - feat/code-identifier-plugin
+      - 'feat/code-identifier-*'
     paths:
       - plugins/code-identifier/**
       - .github/workflows/code-identifier-plugin.yml
@@ -15,6 +15,9 @@ on:
 
 permissions:
   contents: read
+
+env:
+  ECDICT_COMMIT: bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b
 
 jobs:
   test-and-package:
@@ -29,27 +32,81 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run unit tests
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run JavaScript unit tests
         working-directory: plugins/code-identifier
         run: npm test
 
-      - name: Validate plugin manifest
+      - name: Test dictionary builder
+        working-directory: plugins/code-identifier
+        run: python scripts/test_dictionary_build.py
+
+      - name: Download pinned ECDICT source
         run: |
           set -euo pipefail
-          node -e "const info=require('./plugins/code-identifier/info.json'); if(info.plugin_type!=='translate'||!info.id||!info.icon||!Array.isArray(info.needs)) process.exit(1)"
+          curl -L --fail --retry 3 --retry-delay 2 \
+            -o /tmp/ecdict.mini.csv \
+            "https://raw.githubusercontent.com/skywind3000/ECDICT/${ECDICT_COMMIT}/ecdict.mini.csv"
+          head -n 1 /tmp/ecdict.mini.csv | grep -q '^word,phonetic,definition,translation,'
+
+      - name: Build offline dictionary
+        run: |
+          set -euo pipefail
+          python plugins/code-identifier/scripts/build_dictionary.py \
+            --input /tmp/ecdict.mini.csv \
+            --output plugins/code-identifier/dictionary.db \
+            --meta plugins/code-identifier/dictionary.meta.json \
+            --source-commit "${ECDICT_COMMIT}"
+
+      - name: Validate dictionary and manifest
+        run: |
+          set -euo pipefail
+          node -e "const info=require('./plugins/code-identifier/info.json'); if(info.plugin_type!=='translate'||!info.id||!info.icon||!Array.isArray(info.needs)||!info.needs.some(x=>x.key==='dictionaryMode')) process.exit(1)"
+          python - <<'PY'
+          import json
+          import sqlite3
+          from pathlib import Path
+
+          root = Path('plugins/code-identifier')
+          meta = json.loads((root / 'dictionary.meta.json').read_text(encoding='utf-8'))
+          assert meta['source_commit'] == 'bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b'
+          assert meta['source_license'] == 'MIT'
+          assert meta['entries'] > 1000, meta
+
+          connection = sqlite3.connect(root / 'dictionary.db')
+          rows = dict(connection.execute(
+              "SELECT word, translation FROM dictionary WHERE word IN ('translate', 'service', 'list', 'apple')"
+          ).fetchall())
+          aliases = dict(connection.execute(
+              "SELECT word, lemma FROM dictionary WHERE word IN ('services', 'translated')"
+          ).fetchall())
+          connection.close()
+          for word in ('translate', 'service', 'list', 'apple'):
+              assert word in rows and rows[word].strip(), word
+          assert aliases.get('services') == 'service'
+          assert aliases.get('translated') == 'translate'
+          PY
           test -f plugins/code-identifier/main.js
           test -f plugins/code-identifier/info.json
           test -f plugins/code-identifier/icon.svg
+          test -f plugins/code-identifier/dictionary.db
+          test -f plugins/code-identifier/dictionary.meta.json
+          test -f plugins/code-identifier/THIRD_PARTY_NOTICES.md
 
       - name: Package Pot plugin
         run: |
           set -euo pipefail
           mkdir -p dist
           cd plugins/code-identifier
-          zip -j ../../dist/plugin.com.elio.code-identifier.potext main.js info.json icon.svg
+          zip -j ../../dist/plugin.com.elio.code-identifier.potext \
+            main.js info.json icon.svg dictionary.db dictionary.meta.json THIRD_PARTY_NOTICES.md
           cd ../..
           actual="$(unzip -Z1 dist/plugin.com.elio.code-identifier.potext | sort)"
-          expected="$(printf '%s\n' icon.svg info.json main.js | sort)"
+          expected="$(printf '%s\n' THIRD_PARTY_NOTICES.md dictionary.db dictionary.meta.json icon.svg info.json main.js | sort)"
           test "$actual" = "$expected"
 
       - name: Upload plugin artifact
