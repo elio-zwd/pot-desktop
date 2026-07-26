@@ -1,0 +1,53 @@
+{
+  "id": "plugin.com.elio.code-identifier",
+  "plugin_type": "translate",
+  "icon": "icon.svg",
+  "display": "代码标识符助手",
+  "homepage": "https://github.com/elio-zwd/pot-desktop/tree/feat/code-identifier-plugin/plugins/code-identifier",
+  "needs": [
+    {
+      "key": "outputStyle",
+      "display": "输出格式",
+      "type": "select",
+      "options": {
+        "report": "完整分析",
+        "camel": "camelCase",
+        "pascal": "PascalCase",
+        "snake": "snake_case",
+        "screaming": "SCREAMING_SNAKE_CASE",
+        "kebab": "kebab-case",
+        "words": "拆分词组",
+        "chinese": "仅中文含义"
+      }
+    },
+    {
+      "key": "identifierType",
+      "display": "标识符类型",
+      "type": "select",
+      "options": {
+        "auto": "自动判断",
+        "function": "函数名",
+        "variable": "变量名",
+        "boolean": "布尔变量",
+        "class": "类名",
+        "constant": "常量/宏",
+        "file": "文件名"
+      }
+    },
+    {
+      "key": "acronymStyle",
+      "display": "缩写格式",
+      "type": "select",
+      "options": {
+        "standard": "标准驼峰（HTTP → Http）",
+        "preserve": "保留大写（HTTP → HTTP）"
+      }
+    }
+  ],
+  "language": {
+    "auto": "auto",
+    "zh_cn": "zh_cn",
+    "zh_tw": "zh_tw",
+    "en": "en"
+  }
+}
