@@ -51,6 +51,9 @@ export function PluginConfig(props) {
                             base: 'justify-between max-[519px]:flex-col max-[519px]:items-stretch',
                             label: 'text-[length:--nextui-font-size-medium] max-[519px]:mb-1',
                             mainWrapper: 'max-w-[50%] max-[519px]:max-w-none',
+                            inputWrapper: 'min-h-10 h-auto py-2',
+                            innerWrapper: 'items-center',
+                            input: 'h-auto min-h-0 leading-normal py-0',
                         }}
                         onValueChange={(value) => {
                             setPluginConfig({
