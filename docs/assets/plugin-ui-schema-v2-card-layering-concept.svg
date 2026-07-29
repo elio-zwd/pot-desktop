@@ -26,6 +26,8 @@
   <rect width="1600" height="900" fill="url(#bg)"/>
   <text x="800" y="55" text-anchor="middle" class="title">方案二｜卡片分层</text>
   <text x="800" y="87" text-anchor="middle" class="subtitle">核心释义 · 标识符信息 · 逐词解释 · 命名转换 · 异常诊断</text>
+
+  <!-- 设置页 -->
   <g filter="url(#shadow)">
     <rect x="45" y="120" width="650" height="720" rx="20" fill="#111827" stroke="#2a3348"/>
     <rect x="45" y="120" width="650" height="62" rx="20" fill="#151e30"/>
@@ -34,6 +36,8 @@
     <text x="108" y="160" class="windowTitle">程序员划词翻译 · 设置</text>
     <text x="655" y="159" text-anchor="end" class="muted">卡片分组 / 高级默认折叠</text>
   </g>
+
+  <!-- 基础使用 -->
   <g>
     <rect x="70" y="205" width="600" height="170" rx="15" fill="#182235" stroke="#2b3851"/>
     <text x="92" y="237" class="sectionTitle">基础使用</text>
@@ -47,6 +51,8 @@
     <rect x="350" y="334" width="290" height="30" rx="9" fill="#101827" stroke="#35425d"/>
     <text x="368" y="355" class="muted">••••••••••••••••••</text>
   </g>
+
+  <!-- 结果显示 -->
   <g>
     <rect x="70" y="395" width="600" height="145" rx="15" fill="#182235" stroke="#2b3851"/>
     <text x="92" y="427" class="sectionTitle">结果显示</text>
@@ -57,6 +63,8 @@
     <text x="92" y="530" class="label">状态提示</text>
     <text x="620" y="530" text-anchor="end" class="value">仅异常　●</text>
   </g>
+
+  <!-- 标识符规则 -->
   <g>
     <rect x="70" y="560" width="600" height="110" rx="15" fill="#182235" stroke="#2b3851"/>
     <text x="92" y="592" class="sectionTitle">标识符规则</text>
@@ -65,12 +73,16 @@
     <text x="92" y="658" class="label">缩写大小写</text>
     <text x="620" y="658" text-anchor="end" class="value">保留原始大小写</text>
   </g>
+
+  <!-- 高级 AI -->
   <g>
     <rect x="70" y="690" width="600" height="105" rx="15" fill="#151d2d" stroke="#303a50"/>
     <text x="92" y="726" class="sectionTitle">高级 AI</text>
     <text x="620" y="726" text-anchor="end" class="muted">默认折叠　⌄</text>
     <text x="92" y="762" class="muted">Gemini 模型 · 自定义模型 ID · 发送内容 · Key 尝试上限</text>
   </g>
+
+  <!-- 结果页 -->
   <g filter="url(#shadow)">
     <rect x="735" y="120" width="820" height="720" rx="20" fill="#111827" stroke="#2a3348"/>
     <rect x="735" y="120" width="820" height="62" rx="20" fill="#151e30"/>
@@ -79,6 +91,8 @@
     <text x="798" y="160" class="windowTitle">程序员划词翻译</text>
     <text x="1518" y="159" text-anchor="end" class="muted">重新翻译　固定　···</text>
   </g>
+
+  <!-- 核心释义 -->
   <g>
     <rect x="760" y="205" width="770" height="100" rx="15" fill="#182235" stroke="#2b3851"/>
     <rect x="780" y="224" width="28" height="28" rx="8" fill="#5c5df8"/>
@@ -86,17 +100,25 @@
     <text x="820" y="245" class="sectionTitle">核心释义</text>
     <text x="820" y="282" class="big">ST25DV I²C 写入数据</text>
   </g>
+
+  <!-- 标识符信息 -->
   <g>
     <rect x="760" y="322" width="770" height="120" rx="15" fill="#182235" stroke="#2b3851"/>
     <rect x="780" y="341" width="28" height="28" rx="8" fill="#5c5df8"/>
     <text x="794" y="361" text-anchor="middle" class="value">2</text>
     <text x="820" y="362" class="sectionTitle">标识符信息</text>
     <text x="820" y="397" class="label">函数名　·　ST25DV_i2c_WriteData</text>
-    <rect x="820" y="408" width="86" height="25" rx="8" fill="#15335c"/><text x="863" y="426" text-anchor="middle" class="chip">ST25DV</text>
-    <rect x="920" y="408" width="60" height="25" rx="8" fill="#124b58"/><text x="950" y="426" text-anchor="middle" class="chip">I2C</text>
-    <rect x="994" y="408" width="74" height="25" rx="8" fill="#3e295e"/><text x="1031" y="426" text-anchor="middle" class="chip">write</text>
-    <rect x="1082" y="408" width="64" height="25" rx="8" fill="#29452b"/><text x="1114" y="426" text-anchor="middle" class="chip">data</text>
+    <rect x="820" y="408" width="86" height="25" rx="8" fill="#15335c"/>
+    <text x="863" y="426" text-anchor="middle" class="chip">ST25DV</text>
+    <rect x="920" y="408" width="60" height="25" rx="8" fill="#124b58"/>
+    <text x="950" y="426" text-anchor="middle" class="chip">I2C</text>
+    <rect x="994" y="408" width="74" height="25" rx="8" fill="#3e295e"/>
+    <text x="1031" y="426" text-anchor="middle" class="chip">write</text>
+    <rect x="1082" y="408" width="64" height="25" rx="8" fill="#29452b"/>
+    <text x="1114" y="426" text-anchor="middle" class="chip">data</text>
   </g>
+
+  <!-- 逐词解释 -->
   <g>
     <rect x="760" y="459" width="770" height="185" rx="15" fill="#182235" stroke="#2b3851"/>
     <rect x="780" y="478" width="28" height="28" rx="8" fill="#5c5df8"/>
@@ -106,10 +128,13 @@
     <line x1="820" y1="548" x2="1505" y2="548" stroke="#2d3850"/>
     <text x="820" y="573" class="chip">I2C</text><text x="940" y="573" class="label">I²C 总线通信协议</text>
     <line x1="820" y1="586" x2="1505" y2="586" stroke="#2d3850"/>
-    <text x="820" y="611" class="chip">write</text><text x="940" y="611" class="label">写入、写操作</text><text x="1220" y="611" class="muted">来源：本地词典</text>
+    <text x="820" y="611" class="chip">write</text><text x="940" y="611" class="label">写入、写操作</text>
+    <text x="1220" y="611" class="muted">来源：本地词典</text>
     <line x1="820" y1="624" x2="1505" y2="624" stroke="#2d3850"/>
     <text x="820" y="639" class="chip">data</text><text x="940" y="639" class="label">数据、待写入内容</text>
   </g>
+
+  <!-- 命名与诊断 -->
   <g>
     <rect x="760" y="661" width="770" height="88" rx="15" fill="#182235" stroke="#2b3851"/>
     <rect x="780" y="680" width="28" height="28" rx="8" fill="#5c5df8"/>
@@ -119,7 +144,7 @@
   </g>
   <g>
     <rect x="760" y="766" width="470" height="55" rx="13" fill="#3b2714" stroke="#a86516"/>
-    <text x="782" y="798" class="label">诊断：仅异常显示，AI 失败时保留完整本地结果</text>
+    <text x="782" y="798" class="label" fill="#ffbf63">诊断：仅异常显示，AI 失败时保留完整本地结果</text>
     <rect x="1245" y="766" width="285" height="55" rx="13" fill="#151d2d" stroke="#303a50"/>
     <text x="1267" y="798" class="muted">AI 补充：有结果时按需显示</text>
   </g>
