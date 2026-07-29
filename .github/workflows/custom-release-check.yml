@@ -9,6 +9,9 @@ on:
 permissions:
     contents: read
 
+env:
+    COMMUNITY_RUST_VERSION: 1.95.0
+
 jobs:
     frontend-and-release-config:
         name: 前端、Schema 与发布配置
@@ -74,6 +77,12 @@ jobs:
         steps:
             - name: 检出代码
               uses: actions/checkout@v4
+
+            - name: 配置固定 Rust 工具链
+              shell: pwsh
+              run: |
+                  rustup toolchain install $env:COMMUNITY_RUST_VERSION --profile minimal
+                  rustup default $env:COMMUNITY_RUST_VERSION
 
             - name: 输出 Rust 版本
               shell: pwsh
