@@ -90,18 +90,6 @@ jobs:
                   rustc --version
                   cargo --version
 
-            - name: 诊断 Cargo 锁文件差异
-              shell: pwsh
-              run: |
-                  cargo check --manifest-path src-tauri/Cargo.toml
-                  $lockDiff = git diff -- src-tauri/Cargo.lock
-                  if ($lockDiff) {
-                      Write-Host 'BEGIN CARGO LOCK DIFF'
-                      $lockDiff | Write-Host
-                      Write-Host 'END CARGO LOCK DIFF'
-                      throw 'Cargo.lock 需要显式审计和同步'
-                  }
-
             - name: Cargo 锁定检查
               shell: pwsh
               run: cargo check --locked --manifest-path src-tauri/Cargo.toml
