@@ -80,11 +80,13 @@
 ## T8：更新器审计与隔离
 
 - [x] 审计 `tauri.conf.json` 中官方端点、上游公钥和启用状态。
+- [x] 审计 `Cargo.toml` 中 `tauri/updater` feature。
 - [x] 审计 `main.rs` → `updater.rs` → Tauri Updater 的启动触发路径。
 - [x] 审计 `package.json` 与两个历史 updater 清单生成脚本。
 - [x] 新增 `docs/UPDATER_AUDIT.md`。
 - [x] 将 `tauri.updater.active` 设为 `false`。
 - [x] 从运行时配置删除官方 `endpoints` 和 `pubkey`。
+- [x] 从 `Cargo.toml` 移除 `tauri/updater` feature。
 - [x] 将启动检查改为本地日志，不发起官方更新网络请求。
 - [x] 未配置伪更新地址、签名、证书或自有服务。
 - [x] 未修改 `main.rs`、single-instance 或历史发布脚本。
@@ -96,8 +98,9 @@
 - [x] 使用 Node 21、pnpm 9 和 `pnpm install --frozen-lockfile`。
 - [x] 使用 `contents: read` 最小权限，不发布 Artifact 或 Release。
 - [x] 运行 YAML、JSON、Markdown 链接和更新器隔离自检。
+- [x] 自检覆盖 `tauri.conf.json`、`Cargo.toml` 与 Rust updater 调用的一致性。
 - [x] 运行设置 Schema V2、结果 Schema V2、`pnpm build`、`git diff --check` 和工作区检查。
-- [x] 首次运行 `30454764291` 完整通过。
+- [x] updater feature 修复后的运行 `30457537318` 完整通过。
 
 ## T10：模板和仓库入口
 
@@ -115,12 +118,11 @@
 
 ## T12：定向测试
 
-GitHub Actions Run `30454764291`，Ubuntu 24.04：
+GitHub Actions Run `30457537318`：
 
-- [x] Node `v21.7.3`、pnpm `9.15.9`。
 - [x] `pnpm install --frozen-lockfile`。
 - [x] YAML 基础解析。
-- [x] `node scripts/maintenance-foundation-check.mjs`。
+- [x] `node scripts/maintenance-foundation-check.mjs`，包含 updater feature 一致性检查。
 - [x] `node --test tests/plugin_config_schema.test.js`：13/13。
 - [x] `node --test tests/plugin_result_schema.test.mjs`：14/14。
 - [x] `pnpm build`：成功。
@@ -142,3 +144,13 @@ GitHub Actions Run `30454764291`，Ubuntu 24.04：
 - [x] 标题：`chore: 建立 Pot 社区维护版基础治理`。
 - [x] PR 正文说明文档、CI、更新器行为、严格排除和后续事项。
 - [x] 保持 Draft，未转 Ready、未合并、未修改 `custom/main`。
+
+## T15：本地验收警告闭环
+
+- [x] 接收本地 AI 在 HEAD `17056977ba4e51b8901beecbb990c91d81304544` 的只读验收报告。
+- [x] 确认 `cargo check` 失败根因为关闭 updater 配置后仍保留 `tauri/updater` feature。
+- [x] 提交 `65ff19ffb970534468ccd6156c666b0ee67fc5b7` 移除 updater feature。
+- [x] 提交 `7389b85a3419e6711608350a920f6e1d26b8e3f0` 增加一致性自检。
+- [x] GitHub Actions Run `30457537318` 完整通过。
+- [ ] 本地 AI 在最新精确 HEAD 上重新执行 `cargo check --locked --manifest-path src-tauri/Cargo.toml`。
+- [ ] 本地复验后确认 `git diff --exit-code` 成功且 `git status --short` 为空。
