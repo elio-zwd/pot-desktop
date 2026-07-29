@@ -1,0 +1,99 @@
+name: 缺陷报告
+description: 报告 Pot 社区维护版中可复现的问题
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。本仓库是非官方 Pot 社区维护版，不代表官方 Pot 或 Manggo。
+        请勿公开粘贴 API Key、令牌、证书、数据库、完整翻译文本或其他隐私数据。
+
+  - type: checkboxes
+    id: maintenance-fork
+    attributes:
+      label: 反馈对象确认
+      options:
+        - label: 我确认问题发生在 elio-zwd/pot-desktop 的社区维护版，而不是官方 Pot 或 Manggo。
+          required: true
+        - label: 我已删除或替换日志中的 API Key、令牌、个人路径和隐私文本。
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本或 commit SHA
+      description: 请填写维护版版本、分支和尽可能精确的 commit SHA。
+      placeholder: 例如 custom/main @ abcdef123456
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 操作系统与架构
+      options:
+        - Windows x64
+        - Windows 其他架构
+        - macOS
+        - Linux
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: 环境补充
+      description: 可填写 Windows 版本、桌面环境、WebView2、安装方式或插件名称。
+      placeholder: Windows 11 24H2，WebView2 版本……
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 最小复现步骤
+      description: 请从干净启动开始，按顺序列出稳定复现问题的最少步骤。
+      placeholder: |
+        1. 启动应用
+        2. ……
+        3. ……
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 脱敏日志或截图
+      description: 只提供与问题相关的最小片段；使用 example-key 或占位文本替换敏感内容。
+      render: shell
+
+  - type: textarea
+    id: regression
+    attributes:
+      label: 回归与影响范围
+      description: 说明是否曾在其他版本正常、是否每次发生、是否影响数据或启动。
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 提交前检查
+      options:
+        - label: 我已搜索现有 Issue，未发现相同问题。
+          required: true
+        - label: 我理解 macOS 与 Linux 当前属于尽力兼容，首阶段正式支持平台为 Windows x64。
+          required: true
