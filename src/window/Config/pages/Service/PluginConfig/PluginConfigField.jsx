@@ -37,7 +37,9 @@ export function PluginConfigField({ field, pluginConfig, onValueChange }) {
 
     const fieldControl = (() => {
         if (field.type === 'select') {
-            const selectedLabel = field.options[value] ?? value ?? '';
+            const selectedLabel = Object.prototype.hasOwnProperty.call(field.options, value)
+                ? field.options[value]
+                : value;
 
             return (
                 <Dropdown>
