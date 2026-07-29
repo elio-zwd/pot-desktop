@@ -12,6 +12,13 @@ import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 import { resolvePluginFieldValue } from '../../../../../utils/plugin_config_schema';
 
+const SINGLE_LINE_INPUT_CLASS_NAMES = Object.freeze({
+    base: 'w-full',
+    inputWrapper: 'min-h-10 h-auto py-2',
+    innerWrapper: 'items-center',
+    input: 'h-auto min-h-0 leading-normal py-0',
+});
+
 function SecretToggle({ visible, onToggle, fieldDisplay }) {
     const actionLabel = visible ? '隐藏' : '显示';
 
@@ -113,7 +120,7 @@ export function PluginConfigField({ field, pluginConfig, onValueChange }) {
                 placeholder={field.placeholder || undefined}
                 aria-label={field.display}
                 aria-describedby={descriptionId}
-                classNames={{ base: 'w-full' }}
+                classNames={SINGLE_LINE_INPUT_CLASS_NAMES}
                 endContent={
                     field.secret ? (
                         <SecretToggle
