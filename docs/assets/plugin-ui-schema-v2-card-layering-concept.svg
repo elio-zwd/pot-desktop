@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080d19"/>
+      <stop offset="1" stop-color="#11182a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7757ff"/>
+      <stop offset="1" stop-color="#37d7f2"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+    <style>
+      .title{font:700 34px system-ui,'Microsoft YaHei',sans-serif;fill:#f5f7ff}
+      .subtitle{font:400 18px system-ui,'Microsoft YaHei',sans-serif;fill:#aab2c7}
+      .windowTitle{font:600 19px system-ui,'Microsoft YaHei',sans-serif;fill:#f5f7ff}
+      .sectionTitle{font:600 17px system-ui,'Microsoft YaHei',sans-serif;fill:#edf1ff}
+      .label{font:400 15px system-ui,'Microsoft YaHei',sans-serif;fill:#d2d8e8}
+      .muted{font:400 13px system-ui,'Microsoft YaHei',sans-serif;fill:#8791a8}
+      .value{font:500 15px system-ui,'Microsoft YaHei',sans-serif;fill:#f5f7ff}
+      .big{font:700 27px system-ui,'Microsoft YaHei',sans-serif;fill:#f7f9ff}
+      .chip{font:600 14px ui-monospace,SFMono-Regular,Consolas,monospace;fill:#dfe8ff}
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <text x="800" y="55" text-anchor="middle" class="title">方案二｜卡片分层</text>
+  <text x="800" y="87" text-anchor="middle" class="subtitle">核心释义 · 标识符信息 · 逐词解释 · 命名转换 · 异常诊断</text>
+  <g filter="url(#shadow)">
+    <rect x="45" y="120" width="650" height="720" rx="20" fill="#111827" stroke="#2a3348"/>
+    <rect x="45" y="120" width="650" height="62" rx="20" fill="#151e30"/>
+    <rect x="45" y="162" width="650" height="20" fill="#151e30"/>
+    <rect x="68" y="138" width="30" height="30" rx="8" fill="url(#accent)"/>
+    <text x="108" y="160" class="windowTitle">程序员划词翻译 · 设置</text>
+    <text x="655" y="159" text-anchor="end" class="muted">卡片分组 / 高级默认折叠</text>
+  </g>
+  <g>
+    <rect x="70" y="205" width="600" height="170" rx="15" fill="#182235" stroke="#2b3851"/>
+    <text x="92" y="237" class="sectionTitle">基础使用</text>
+    <text x="92" y="277" class="label">输出方式</text>
+    <rect x="350" y="252" width="290" height="38" rx="10" fill="#101827" stroke="#35425d"/>
+    <text x="368" y="277" class="value">翻译面板（推荐）</text>
+    <text x="92" y="321" class="label">AI 使用方式</text>
+    <rect x="350" y="296" width="290" height="38" rx="10" fill="#101827" stroke="#35425d"/>
+    <text x="368" y="321" class="value">自动补全，失败回退本地</text>
+    <text x="92" y="355" class="label">Gemini API Key</text>
+    <rect x="350" y="334" width="290" height="30" rx="9" fill="#101827" stroke="#35425d"/>
+    <text x="368" y="355" class="muted">••••••••••••••••••</text>
+  </g>
+  <g>
+    <rect x="70" y="395" width="600" height="145" rx="15" fill="#182235" stroke="#2b3851"/>
+    <text x="92" y="427" class="sectionTitle">结果显示</text>
+    <text x="92" y="467" class="label">本地词义范围</text>
+    <text x="620" y="467" text-anchor="end" class="value">常用（精确匹配）</text>
+    <text x="92" y="505" class="label">命名转换</text>
+    <text x="620" y="505" text-anchor="end" class="value">紧凑显示　●</text>
+    <text x="92" y="530" class="label">状态提示</text>
+    <text x="620" y="530" text-anchor="end" class="value">仅异常　●</text>
+  </g>
+  <g>
+    <rect x="70" y="560" width="600" height="110" rx="15" fill="#182235" stroke="#2b3851"/>
+    <text x="92" y="592" class="sectionTitle">标识符规则</text>
+    <text x="92" y="631" class="label">标识符类型</text>
+    <text x="620" y="631" text-anchor="end" class="value">自动识别</text>
+    <text x="92" y="658" class="label">缩写大小写</text>
+    <text x="620" y="658" text-anchor="end" class="value">保留原始大小写</text>
+  </g>
+  <g>
+    <rect x="70" y="690" width="600" height="105" rx="15" fill="#151d2d" stroke="#303a50"/>
+    <text x="92" y="726" class="sectionTitle">高级 AI</text>
+    <text x="620" y="726" text-anchor="end" class="muted">默认折叠　⌄</text>
+    <text x="92" y="762" class="muted">Gemini 模型 · 自定义模型 ID · 发送内容 · Key 尝试上限</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="735" y="120" width="820" height="720" rx="20" fill="#111827" stroke="#2a3348"/>
+    <rect x="735" y="120" width="820" height="62" rx="20" fill="#151e30"/>
+    <rect x="735" y="162" width="820" height="20" fill="#151e30"/>
+    <rect x="758" y="138" width="30" height="30" rx="8" fill="url(#accent)"/>
+    <text x="798" y="160" class="windowTitle">程序员划词翻译</text>
+    <text x="1518" y="159" text-anchor="end" class="muted">重新翻译　固定　···</text>
+  </g>
+  <g>
+    <rect x="760" y="205" width="770" height="100" rx="15" fill="#182235" stroke="#2b3851"/>
+    <rect x="780" y="224" width="28" height="28" rx="8" fill="#5c5df8"/>
+    <text x="794" y="244" text-anchor="middle" class="value">1</text>
+    <text x="820" y="245" class="sectionTitle">核心释义</text>
+    <text x="820" y="282" class="big">ST25DV I²C 写入数据</text>
+  </g>
+  <g>
+    <rect x="760" y="322" width="770" height="120" rx="15" fill="#182235" stroke="#2b3851"/>
+    <rect x="780" y="341" width="28" height="28" rx="8" fill="#5c5df8"/>
+    <text x="794" y="361" text-anchor="middle" class="value">2</text>
+    <text x="820" y="362" class="sectionTitle">标识符信息</text>
+    <text x="820" y="397" class="label">函数名　·　ST25DV_i2c_WriteData</text>
+    <rect x="820" y="408" width="86" height="25" rx="8" fill="#15335c"/><text x="863" y="426" text-anchor="middle" class="chip">ST25DV</text>
+    <rect x="920" y="408" width="60" height="25" rx="8" fill="#124b58"/><text x="950" y="426" text-anchor="middle" class="chip">I2C</text>
+    <rect x="994" y="408" width="74" height="25" rx="8" fill="#3e295e"/><text x="1031" y="426" text-anchor="middle" class="chip">write</text>
+    <rect x="1082" y="408" width="64" height="25" rx="8" fill="#29452b"/><text x="1114" y="426" text-anchor="middle" class="chip">data</text>
+  </g>
+  <g>
+    <rect x="760" y="459" width="770" height="185" rx="15" fill="#182235" stroke="#2b3851"/>
+    <rect x="780" y="478" width="28" height="28" rx="8" fill="#5c5df8"/>
+    <text x="794" y="498" text-anchor="middle" class="value">3</text>
+    <text x="820" y="499" class="sectionTitle">逐词解释</text>
+    <text x="820" y="535" class="chip">ST25DV</text><text x="940" y="535" class="label">芯片系列 / 型号，本地技术信息</text>
+    <line x1="820" y1="548" x2="1505" y2="548" stroke="#2d3850"/>
+    <text x="820" y="573" class="chip">I2C</text><text x="940" y="573" class="label">I²C 总线通信协议</text>
+    <line x1="820" y1="586" x2="1505" y2="586" stroke="#2d3850"/>
+    <text x="820" y="611" class="chip">write</text><text x="940" y="611" class="label">写入、写操作</text><text x="1220" y="611" class="muted">来源：本地词典</text>
+    <line x1="820" y1="624" x2="1505" y2="624" stroke="#2d3850"/>
+    <text x="820" y="639" class="chip">data</text><text x="940" y="639" class="label">数据、待写入内容</text>
+  </g>
+  <g>
+    <rect x="760" y="661" width="770" height="88" rx="15" fill="#182235" stroke="#2b3851"/>
+    <rect x="780" y="680" width="28" height="28" rx="8" fill="#5c5df8"/>
+    <text x="794" y="700" text-anchor="middle" class="value">4</text>
+    <text x="820" y="701" class="sectionTitle">命名转换（紧凑显示）</text>
+    <text x="820" y="730" class="muted">常用　ST25DVI2cWriteData　　分隔　st25dv_i2c_write_data　　常量　ST25DV_I2C_WRITE_DATA</text>
+  </g>
+  <g>
+    <rect x="760" y="766" width="470" height="55" rx="13" fill="#3b2714" stroke="#a86516"/>
+    <text x="782" y="798" class="label">诊断：仅异常显示，AI 失败时保留完整本地结果</text>
+    <rect x="1245" y="766" width="285" height="55" rx="13" fill="#151d2d" stroke="#303a50"/>
+    <text x="1267" y="798" class="muted">AI 补充：有结果时按需显示</text>
+  </g>
+</svg>
