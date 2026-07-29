@@ -66,7 +66,9 @@
             "active": true,
             "category": "Utility",
             "copyright": "GPL-3.0",
-            "targets": "all",
+            "targets": [
+                "nsis"
+            ],
             "identifier": "com.elio.potcommunity",
             "publisher": "Elio Community",
             "longDescription": "Pot 社区维护版是基于 Pot 3.0.7 的非官方社区维护分支。",
