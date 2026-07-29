@@ -1,0 +1,71 @@
+name: Pot 社区维护版轻量门禁
+
+on:
+  pull_request:
+    branches:
+      - custom/main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: custom-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Schema、构建与治理检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 21
+          cache: pnpm
+
+      - name: 输出工具版本
+        run: |
+          node --version
+          pnpm --version
+          ruby --version
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 校验 YAML
+        run: |
+          ruby -e "require 'yaml'; ARGV.each { |file| YAML.load_file(file); puts \"YAML OK: #{file}\" }" \
+            .github/workflows/custom-ci.yml \
+            .github/ISSUE_TEMPLATE/bug_report.yml
+
+      - name: 校验维护版配置与文档
+        run: node scripts/maintenance-foundation-check.mjs
+
+      - name: 测试设置 Schema V2
+        run: node --test tests/plugin_config_schema.test.js
+
+      - name: 测试结果 Schema V2
+        run: node --test tests/plugin_result_schema.test.mjs
+
+      - name: 构建前端
+        run: pnpm build
+
+      - name: 检查补丁格式
+        run: git diff --check
+
+      - name: 检查构建后工作区
+        run: |
+          git diff --exit-code
+          test -z "$(git status --short)"
