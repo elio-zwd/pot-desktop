@@ -110,7 +110,7 @@ Tauri 对外版本读取根目录 `package.json`。Cargo 内部包名 `pot` 和�
 - Rust 不调用 `tauri::updater`；
 - 启动只记录“尚未配置自有更新通道”；
 - 工作流不读取签名 Secret；
-- 阶段 A 的 `publish=true` 会明确失败。
+- 阶段 A的 `publish=true` 会明确失败。
 
 新增 manifest 生成器不代表运行时自动更新已经可用。
 
@@ -222,7 +222,23 @@ ZIP 内文件：
 
 用于生成和诊断安装包的临时 PR 工作流均已从分支删除，防止继续消耗 Actions 或进入长期发布链。
 
-## 12. 尚未验证
+## 12. 远端完成状态
+
+已完成：
+
+- 发布配置自检；
+- manifest fixture；
+- 设置 Schema V2 13/13；
+- 结果 Schema V2 14/14；
+- 前端构建；
+- 固定 Rust 1.95.0 的 Windows `cargo check --locked`；
+- Windows x64 NSIS 安装包实际构建；
+- 安装包与 SHA-256 Artifact 核对；
+- 临时写权限和临时 NSIS 工作流清理。
+
+最终精确 HEAD 的 GitHub Actions 结果必须从 Draft PR #6 读取，不得沿用本文件提交前的旧 run。
+
+## 13. 尚未验证
 
 - Windows 本地 NSIS 重建；
 - 安装、启动和卸载；
@@ -234,7 +250,7 @@ ZIP 内文件：
 - 阶段 B 签名、升级、错误签名拒绝和回滚；
 - 永久手动 Windows 工作流在最终 HEAD 上由仓库所有者再次触发后的完整清理结果。
 
-## 13. 严格未做
+## 14. 严格未做
 
 - 未创建 tag、GitHub Release 或正式安装包发布；
 - 未启用 Updater；
