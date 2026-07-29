@@ -9,166 +9,136 @@
 
 ## T0：接手与基线确认
 
-- [ ] 按顺序读取 `README.md`、`AGENTS.md`、Plan、Task、Handoff。
-- [ ] 确认仓库为 `https://github.com/elio-zwd/pot-desktop`。
-- [ ] 确认当前分支为 `chore/maintenance-foundation`。
-- [ ] 确认 Base 为 `custom/main`。
-- [ ] 确认分支祖先包含 `b535ac2b1f39fead9eb8d0e0a1f95f1e991ff823`。
-- [ ] 确认工作区干净。
-- [ ] 读取当前更新器、Tauri 配置、工作流和发布脚本真实实现。
-- [ ] 不从旧的 Schema 功能分支继续开发。
+- [x] 按顺序读取 `README.md`、`AGENTS.md`、Plan、Task、Handoff、Decisions 和 `LICENSE`。
+- [x] 确认仓库为 `https://github.com/elio-zwd/pot-desktop`。
+- [x] 确认开发分支为 `chore/maintenance-foundation`，Base 为 `custom/main`。
+- [x] 确认分支 Merge Base 为 `b535ac2b1f39fead9eb8d0e0a1f95f1e991ff823`，分支未落后。
+- [x] 读取 Tauri 配置、更新器前后端、历史更新清单脚本、测试入口和可发现的工作流入口。
+- [x] 未从旧 Schema 功能分支继续开发。
 
-## T1：重写 README 首屏身份
+## T1：README 首屏身份
 
-- [ ] 将标题和首屏定位调整为“Pot 社区维护版”。
-- [ ] 明确标注“非官方社区维护版”。
-- [ ] 说明基于 Pot 3.0.7 与 GPL-3.0。
-- [ ] 保留原版 Pot 仓库、原作者和许可链接。
-- [ ] 说明初期正式支持 Windows x64。
-- [ ] 说明当前稳定主线为 `custom/main`。
-- [ ] 简要列出已稳定合入的设置 Schema V2 和结果 Schema V2。
-- [ ] 说明暂未提供自有自动更新通道。
-- [ ] 明确本维护版问题不要反馈给 Manggo 或官方 Pot。
-- [ ] 保留仍适用的原版功能和使用说明，避免无关删减。
+- [x] 标题改为“Pot 社区维护版”。
+- [x] 明确非官方身份、GPL-3.0、上游来源和反馈边界。
+- [x] 明确 `custom/main`、Windows x64、Schema V2 稳定能力和规划版本 `3.1.0-elio.1`。
+- [x] 明确当前没有维护版正式安装包或自有自动更新通道。
+- [x] 保留并整理仍适用的上游使用、插件、接口、安装和编译说明。
+- [x] 对上游 Release、商店和跨平台说明增加维护版边界提示。
 
-## T2：更新长期 AGENTS.md
+## T2：长期 AGENTS.md
 
-- [ ] 删除已经完成的双 Schema 临时分支描述。
-- [ ] 定义 `master`、`custom/main`、功能分支和上游移植分支职责。
-- [ ] 保留 README → AGENTS → Plan → Task → Handoff → 源码的读取顺序。
-- [ ] 保留中文沟通和 `英文 Tag: 中文描述` 提交格式。
-- [ ] 定义 Draft PR、禁止自动合并和禁止强推规则。
-- [ ] 定义远端 AI 开发、本地 AI 只读验收规则。
-- [ ] 固化 Schema V2 向后兼容和安全边界。
-- [ ] 增加上游 PR 审计、署名和移植规则。
-- [ ] 增加发布、签名、密钥和用户数据禁止事项。
-- [ ] 不把临时任务写成永久全局要求。
+- [x] 删除已经结束的双 Schema 临时分支规则。
+- [x] 定义 `master`、`custom/main`、`feat/fix/chore` 和 `port/` 分支职责。
+- [x] 固化必读顺序、中文沟通和 `英文 Tag: 中文描述` 提交格式。
+- [x] 固化 Draft PR、禁止自动合并、禁止强推和本地 AI 只读验收规则。
+- [x] 固化 Schema V2 兼容、安全、依赖、发布、签名和用户数据边界。
+- [x] 增加上游 PR 审计、拆分、署名和验证规则。
 
-## T3：维护范围文档
+## T3：维护范围
 
-- [ ] 新建 `docs/MAINTENANCE_SCOPE.md`。
-- [ ] 说明第一优先级：插件平台、Windows x64、安全、稳定性、构建链。
-- [ ] 说明第二优先级：其他平台已复现关键问题和常用服务修复。
-- [ ] 说明默认不承担全部上游 Issue、冷门服务和与 Manggo 全面竞争。
-- [ ] 说明本阶段不迁移 Tauri 2、不整体升级依赖。
-- [ ] 定义问题接受和拒绝依据。
-- [ ] 定义“正式支持”和“尽力兼容”的区别。
+- [x] 新增 `docs/MAINTENANCE_SCOPE.md`。
+- [x] 定义第一优先级、第二优先级和默认不承担范围。
+- [x] 区分 Windows x64 正式支持与其他平台尽力兼容。
+- [x] 定义问题接受、拒绝和暂缓依据。
 
-## T4：发布政策文档
+## T4：发布政策
 
-- [ ] 新建 `docs/RELEASE_POLICY.md`。
-- [ ] 固化名称“Pot 社区维护版”。
-- [ ] 固化初期正式平台“Windows x64”。
-- [ ] 固化版本格式和首个规划版本 `3.1.0-elio.1`。
-- [ ] 要求发布基于 `custom/main` 精确 SHA。
-- [ ] 要求安装包和 Release 页面明确非官方身份。
-- [ ] 禁止使用上游签名密钥和更新通道。
-- [ ] 说明自有签名、更新地址、安装包品牌化属于后续独立 PR。
-- [ ] 定义发布说明、已知问题和回滚要求。
+- [x] 新增 `docs/RELEASE_POLICY.md`。
+- [x] 固化名称、Windows x64、版本格式和首个规划版本。
+- [x] 要求 Release 基于 `custom/main` 精确 SHA，并明确非官方身份。
+- [x] 禁止使用上游更新端点、公钥、签名材料和未验证开发分支。
+- [x] 定义发布门禁、已知问题、回滚和历史 updater 脚本边界。
+- [x] 将版本写入、自有签名、更新服务和安装器品牌化留给 `chore/custom-release-channel`。
 
 ## T5：上游 PR 移植政策
 
-- [ ] 新建 `docs/UPSTREAM_PORT_POLICY.md`。
-- [ ] 定义 `port/upstream-pr-<number>-<topic>` 命名。
-- [ ] 定义安全、稳定性、相关性、规模和维护成本评估。
-- [ ] 要求读取完整 diff、讨论、CI 和依赖。
-- [ ] 要求在最新 `custom/main` 上重放和验证。
-- [ ] 优先保留原作者 commit、Authorship 和 Co-Authored-By。
-- [ ] 禁止整体移植多个不相关模块的大杂烩 PR。
-- [ ] 定义接受、拒绝、等待、替代实现四种结论。
+- [x] 新增 `docs/UPSTREAM_PORT_POLICY.md`。
+- [x] 定义 `port/upstream-pr-<number>-<topic>` 命名。
+- [x] 定义完整 diff、讨论、CI、依赖、安全、相关性、规模和维护成本审计。
+- [x] 要求在最新 `custom/main` 上重新验证。
+- [x] 要求保留原作者 commit、Authorship 或 `Co-Authored-By`。
+- [x] 定义接受、拒绝、等待和替代实现四种结论。
 
-## T6：建立 UPSTREAM_PORTS 台账
+## T6：UPSTREAM_PORTS 台账
 
-- [ ] 新建仓库根目录 `UPSTREAM_PORTS.md`。
-- [ ] 提供候选记录模板。
-- [ ] 加入已知候选 #1285 阿里翻译 HTTPS 修复。
-- [ ] 加入已知候选 #1292 全局快捷键修复，状态设为待审计。
-- [ ] 加入 #1290，标记为不可整体移植、需拆分审计。
-- [ ] 加入 #1284，标记为与 Result Schema V2 重叠、暂缓。
-- [ ] 加入 Windows single-instance 空指针问题，记录为独立运行时候选。
-- [ ] 不在本任务中直接移植任何运行时代码。
+- [x] 新增根目录 `UPSTREAM_PORTS.md` 和候选模板。
+- [x] 记录 #1285 阿里翻译 HTTPS 修复为待优先审计。
+- [x] 记录 #1292 全局快捷键修复为待审计。
+- [x] 记录 #1290 为拒绝整体移植、必须拆分。
+- [x] 记录 #1284 与 Result Schema V2 重叠并暂缓。
+- [x] 记录 Windows single-instance 空指针为独立运行时候选。
+- [x] 本分支未移植任何候选运行时代码。
 
 ## T7：安全政策
 
-- [ ] 新建 `SECURITY.md`。
-- [ ] 明确支持分支和报告范围。
-- [ ] 禁止公开粘贴 API Key、证书、签名密钥、数据库和隐私文本。
-- [ ] 将凭据泄露、明文传输、任意代码执行和用户数据破坏列为高优先级。
-- [ ] 说明本项目不是官方 Pot 或 Manggo。
-- [ ] 说明暂不承诺固定响应 SLA。
-- [ ] 提供不依赖真实密钥的复现要求。
+- [x] 新增 `SECURITY.md`。
+- [x] 说明支持分支、报告范围、私密报告和脱敏复现要求。
+- [x] 禁止公开提交凭据、证书、数据库和隐私文本。
+- [x] 将凭据泄露、明文传输、任意代码执行、错误更新来源和数据破坏列为高优先级。
+- [x] 说明非官方身份和暂不承诺固定 SLA。
 
-## T8：审计当前更新器
+## T8：更新器审计与隔离
 
-- [ ] 查找 Tauri 更新器配置、签名公钥和端点。
-- [ ] 查找前端或后端触发更新检查的位置。
-- [ ] 查找官方 Release、下载和版本检查的耦合。
-- [ ] 判断定制版是否可能误接收官方更新。
-- [ ] 将审计结果写入发布政策或独立说明。
-- [ ] 简单配置即可安全关闭时，在本 PR 实施。
-- [ ] 涉及签名、安装器、后端迁移或自有服务时，留给 `chore/custom-release-channel`。
-- [ ] 禁止配置尚不存在的伪更新地址。
+- [x] 审计 `tauri.conf.json` 中官方端点、上游公钥和启用状态。
+- [x] 审计 `main.rs` → `updater.rs` → Tauri Updater 的启动触发路径。
+- [x] 审计 `package.json` 与两个历史 updater 清单生成脚本。
+- [x] 新增 `docs/UPDATER_AUDIT.md`。
+- [x] 将 `tauri.updater.active` 设为 `false`。
+- [x] 从运行时配置删除官方 `endpoints` 和 `pubkey`。
+- [x] 将启动检查改为本地日志，不发起官方更新网络请求。
+- [x] 未配置伪更新地址、签名、证书或自有服务。
+- [x] 未修改 `main.rs`、single-instance 或历史发布脚本。
 
 ## T9：轻量维护版 CI
 
-- [ ] 新建 `.github/workflows/custom-ci.yml`。
-- [ ] 触发范围至少覆盖指向 `custom/main` 的 PR。
-- [ ] 使用 Node 21 和 pnpm 9。
-- [ ] 使用 `pnpm install --frozen-lockfile`。
-- [ ] 运行设置 Schema V2 测试。
-- [ ] 运行结果 Schema V2 测试。
-- [ ] 运行 `pnpm build`。
-- [ ] 运行 `git diff --check`。
-- [ ] 检查构建后受跟踪工作区未变化。
-- [ ] 权限使用只读最小权限。
-- [ ] 不复制全平台打包矩阵。
-- [ ] 不发布 artifact 或 Release。
+- [x] 新增 `.github/workflows/custom-ci.yml`。
+- [x] 覆盖指向 `custom/main` 的 PR 与手动触发。
+- [x] 使用 Node 21、pnpm 9 和 `pnpm install --frozen-lockfile`。
+- [x] 使用 `contents: read` 最小权限，不发布 Artifact 或 Release。
+- [x] 运行 YAML、JSON、Markdown 链接和更新器隔离自检。
+- [x] 运行设置 Schema V2、结果 Schema V2、`pnpm build`、`git diff --check` 和工作区检查。
+- [x] 首次运行 `30454764291` 完整通过。
 
-## T10：模板和仓库入口评估
+## T10：模板和仓库入口
 
-- [ ] 检查现有 PR/Issue 模板。
-- [ ] 缺失时增加最小 PR 模板，要求 Base SHA、测试、兼容和上游来源。
-- [ ] 缺失时增加 Bug 模板，要求平台、版本、日志和最小复现。
-- [ ] 不增加复杂项目管理系统。
-- [ ] 不引入机器人、外部服务或新依赖。
+- [x] 检查常见 PR 与 Bug 模板路径，当前分支不存在对应模板。
+- [x] 新增最小 `.github/PULL_REQUEST_TEMPLATE.md`。
+- [x] 新增 `.github/ISSUE_TEMPLATE/bug_report.yml`。
+- [x] 未增加机器人、外部服务、复杂项目管理或新依赖。
 
-## T11：文档一致性检查
+## T11：文档一致性
 
-- [ ] README、AGENTS、维护范围、发布政策和移植政策术语一致。
-- [ ] 所有文档统一使用中文。
-- [ ] 所有仓库链接正确。
-- [ ] 不把尚未实现的 Release 或更新通道写成已经可用。
-- [ ] 不声称 macOS/Linux 已获正式支持。
-- [ ] 不删除 GPL、上游作者或原项目来源。
-- [ ] 不声称官方完全永久停止维护等无法保证的事实。
+- [x] README、AGENTS、维护范围、发布政策、移植政策、安全政策术语一致。
+- [x] 文档统一使用中文并保留上游来源与 GPL-3.0。
+- [x] 未把规划 Release、自有更新通道或其他平台支持写成已经可用。
+- [x] 未声称官方项目永久停止维护。
 
 ## T12：定向测试
 
-- [ ] 运行 `node --test tests/plugin_config_schema.test.js` 或仓库当前等价命令。
-- [ ] 运行 `node --test tests/plugin_result_schema.test.mjs` 或仓库当前等价命令。
-- [ ] 运行 `pnpm build`。
-- [ ] 校验新增 YAML 能被解析。
-- [ ] 校验 README 和 Markdown 链接无明显错误。
-- [ ] 运行 `git diff --check`。
-- [ ] 检查没有 API Key、证书、用户配置或数据库进入提交。
-- [ ] 检查工作区干净。
-- [ ] 若未修改 Schema 运行时代码，不重复完整桌面 UI 人工验收。
+GitHub Actions Run `30454764291`，Ubuntu 24.04：
+
+- [x] Node `v21.7.3`、pnpm `9.15.9`。
+- [x] `pnpm install --frozen-lockfile`。
+- [x] YAML 基础解析。
+- [x] `node scripts/maintenance-foundation-check.mjs`。
+- [x] `node --test tests/plugin_config_schema.test.js`：13/13。
+- [x] `node --test tests/plugin_result_schema.test.mjs`：14/14。
+- [x] `pnpm build`：成功。
+- [x] `git diff --check`：成功。
+- [x] 构建后 `git diff --exit-code` 和 `git status --short`：成功，工作区干净。
+- [x] 未修改 Schema V2 运行时代码或样式，因此不重复完整桌面 UI 人工验收。
 
 ## T13：更新任务状态和交接
 
-- [ ] 更新本任务清单完成状态。
-- [ ] 在 Handoff 记录最终 HEAD、测试命令和结果。
-- [ ] 记录更新器审计结论和遗留风险。
-- [ ] 记录后续 `chore/custom-release-channel` 的明确范围。
-- [ ] 生成本地 AI 只读验收 Prompt。
+- [x] 更新本任务清单完成状态。
+- [x] 在 Handoff 记录实现、测试、更新器结论和后续发布分支范围。
+- [x] 准备本地 AI 精确 HEAD 只读验收 Prompt。
 
 ## T14：Draft PR
 
-- [ ] 创建 Draft PR。
-- [ ] Base：`custom/main`。
-- [ ] Head：`chore/maintenance-foundation`。
-- [ ] 标题：`chore: 建立 Pot 社区维护版基础治理`。
-- [ ] PR 正文说明文档、CI、更新器行为和未完成事项。
-- [ ] 不得转 Ready。
-- [ ] 不得合并。
-- [ ] 未经用户授权不得修改 `custom/main`。
+- [x] 创建 Draft PR #5。
+- [x] Base：`custom/main`。
+- [x] Head：`chore/maintenance-foundation`。
+- [x] 标题：`chore: 建立 Pot 社区维护版基础治理`。
+- [x] PR 正文说明文档、CI、更新器行为、严格排除和后续事项。
+- [x] 保持 Draft，未转 Ready、未合并、未修改 `custom/main`。
