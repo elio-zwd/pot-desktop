@@ -1,173 +1,241 @@
 # Pot 社区维护版发布通道交接
 
-## 1. 当前状态
+## 1. 项目与分支
 
 - 仓库：`https://github.com/elio-zwd/pot-desktop`
 - 稳定分支：`custom/main`
-- 基础治理合并提交：`f9b4ef7bd46eff4010502f81d1b1135685be27c6`
-- 当前开发分支：`chore/custom-release-channel`
-- PR：尚未创建
+- 开发分支：`chore/custom-release-channel`
+- Draft PR：`https://github.com/elio-zwd/pot-desktop/pull/6`
+- Base SHA：`f9b4ef7bd46eff4010502f81d1b1135685be27c6`
 - 规划版本：`3.1.0-elio.1`
 - 正式支持目标：Windows x64
 
-PR #5 已完成完整远端 CI 和本地 Rust 只读验收，并通过 Squash 合并。当前分支从合并后的精确 SHA 创建，不依赖旧开发分支。
+PR #5 已通过远端 CI 和本地 Rust 只读验收，并以 Squash 方式合并。当前分支从该合并提交创建，不依赖已结束的维护基础开发分支。
+
+本文件提交后的精确最终 HEAD 以 Draft PR #6 的 `head_sha` 为准。完成收尾时必须把最终 SHA、最终工作流和本地验收 Prompt 一并交付。
 
 ## 2. 必读顺序
 
-接手时必须依次读取：
+后续接手必须依次读取：
 
 1. `README.md`
 2. `AGENTS.md`
 3. `plans/CUSTOM_RELEASE_CHANNEL_PLAN.md`
 4. `tasks/CUSTOM_RELEASE_CHANNEL_TASKS.md`
 5. `handoffs/CUSTOM_RELEASE_CHANNEL_HANDOFF.md`
-6. `docs/RELEASE_POLICY.md`
-7. `docs/UPDATER_AUDIT.md`
-8. `SECURITY.md`
-9. `src-tauri/tauri.conf.json`
-10. `src-tauri/Cargo.toml`
-11. `package.json`
-12. 当前更新脚本和 GitHub Actions
+6. `docs/COMMUNITY_RELEASE_CHANNEL.md`
+7. `docs/RELEASE_POLICY.md`
+8. `docs/UPDATER_AUDIT.md`
+9. `SECURITY.md`
+10. `src-tauri/tauri.conf.json`
+11. `src-tauri/Cargo.toml`
+12. `package.json`
+13. 发布脚本、测试和 GitHub Actions
 
-不得从旧 PR、旧 HEAD 或上游发布脚本猜测维护版发布实现。
+不得从旧 PR、旧 HEAD、上游发布脚本或聊天摘要猜测当前实现。
 
-## 3. 已确认目标
+## 3. 两阶段结论
 
-- 对外名称：`Pot 社区维护版`；
-- 非官方社区维护版；
-- GPL-3.0；
-- 首阶段正式支持 Windows x64；
-- 规划版本：`3.1.0-elio.1`；
-- Release 必须来自已验证的 `custom/main` 精确 SHA；
-- 不使用官方 Pot 的 endpoint、公钥、私钥或发布凭据；
-- 不发布 macOS/Linux；
-- 不迁移 Tauri 2；
-- 不整体升级依赖；
-- 不处理 single-instance；
-- 不重做 UI 或 Schema V2。
+### 阶段 A：当前 PR 实现
 
-## 4. 推荐独立身份
+阶段 A 建立不含真实签名材料的 Windows x64 发布基础：
 
-计划默认采用：
+- 维护版版本和独立应用身份；
+- Windows x64 NSIS 配置；
+- 发布配置与 Updater 隔离自检；
+- Tauri v1 静态 `latest.json` 生成器和测试；
+- Windows x64 非发布构建工作流；
+- SHA-256 和短期 Actions Artifact；
+- Release note 模板和发布政策；
+- 固定版本的 Node、pnpm、Rust 门禁。
 
-- Tauri productName：`Pot 社区维护版`；
-- Bundle identifier：`com.elio.potcommunity`；
-- Windows publisher：`Elio Community`；
-- artifact slug：`pot-community`；
-- tag：`v3.1.0-elio.1`；
-- Release 标题：`Pot 社区维护版 3.1.0-elio.1`。
+阶段 A 不创建 tag、GitHub Release 或正式下载入口，也不启用自动更新。
 
-独立 identifier 用于避免与官方 Pot 共用安装器身份、WebView 数据目录和系统配置。写入后必须进行官方版与维护版并存验收。
+### 阶段 B：仓库所有者外部准备后实施
 
-## 5. 当前真实配置
+只有以下条件满足后才能继续：
 
-当前仍是上游发布元数据：
+1. 仓库所有者在本地生成独立 Tauri v1 updater 密钥；
+2. 私钥和密码完成离线备份；
+3. GitHub Actions Secrets 配置完成；
+4. 可公开公钥完成核对；
+5. Windows 安装、并存、卸载和升级链路通过验收；
+6. 仓库所有者明确授权发布。
 
-- `package.json`：`3.0.7`；
-- Tauri productName：`pot`；
-- Tauri version：`3.0.7`；
-- identifier：`com.pot-app.desktop`；
-- bundle targets：`all`；
-- Cargo package/repository 仍是上游值；
-- package scripts 中仍有上游 updater 生成入口。
+远端开发不得生成、接收、保存或提交真实私钥、密码或证书。
 
-当前 updater 隔离状态正确：
+## 4. 当前应用身份
+
+| 项目 | 值 |
+| --- | --- |
+| package name | `pot-community` |
+| 对外版本 | `3.1.0-elio.1` |
+| productName | `Pot 社区维护版` |
+| identifier | `com.elio.potcommunity` |
+| publisher 元数据 | `Elio Community` |
+| bundle target | `nsis` |
+| artifact slug | `pot-community` |
+| 规划 tag | `v3.1.0-elio.1` |
+
+Tauri 对外版本读取根目录 `package.json`。Cargo 内部包名 `pot` 和版本 `0.0.0` 保持上游兼容，不是安装包版本来源。
+
+阶段 A 没有 Windows 代码签名证书。安装器中的 publisher 配置只是元数据，Windows 安全界面仍可能显示“未知发布者”，不得表述为已完成代码签名。
+
+## 5. 与官方 Pot 的数据边界
+
+当前 Rust 配置代码使用 bundle identifier 构建配置和插件路径，因此维护版使用：
+
+```text
+<系统配置目录>/com.elio.potcommunity/config.json
+<系统配置目录>/com.elio.potcommunity/plugins/
+```
+
+它不会主动读取官方 `com.pot-app.desktop` 的对应目录。
+
+阶段 A 不做自动迁移。正式发布前必须在 Windows 本地验证：
+
+- 官方版与维护版能否同时安装和启动；
+- 配置、插件、缓存、数据库、日志和 WebView 数据是否完全隔离；
+- 自启动项和全局快捷键是否冲突；
+- 卸载维护版是否不删除官方 Pot 数据。
+
+## 6. Updater 当前状态
+
+当前仍完整关闭：
 
 - `tauri.updater.active: false`；
-- 没有 endpoint 和 pubkey；
-- Cargo 没有 `tauri/updater` feature；
-- Rust `check_update` 不访问网络；
-- 配置自检会检查上述一致性。
+- 无 endpoint；
+- 无 pubkey；
+- Cargo 无 `tauri/updater` feature；
+- Rust 不调用 `tauri::updater`；
+- 启动只记录“尚未配置自有更新通道”；
+- 工作流不读取签名 Secret；
+- 阶段 A 的 `publish=true` 会明确失败。
 
-## 6. 两阶段实施
+新增 manifest 生成器不代表运行时自动更新已经可用。
 
-### 阶段 A：无真实密钥的发布链准备
+## 7. Manifest 生成器
 
-远端 AI 可以直接完成：
+`scripts/generate-community-updater-manifest.mjs` 强制：
 
-- 版本与独立身份；
-- 版本/身份自检；
-- 维护版 updater manifest 生成器和 fixture；
-- Windows x64 非发布构建 workflow；
-- Release note 模板；
-- SHA-256 与 artifact 命名；
-- 历史 updater 入口隔离；
-- Draft PR；
-- 轻量 CI。
+- 版本为 `x.y.z-elio.n`；
+- tag 等于 `v` 加版本；
+- URL 使用 HTTPS；
+- URL 属于 `elio-zwd/pot-desktop` 对应 tag 的 GitHub Release；
+- Artifact 为 `.nsis.zip`；
+- 平台仅 `windows-x86_64`；
+- 签名文本非空。
 
-阶段 A 期间 updater 必须保持关闭。
+生成器不访问官方 Pot API、不读取私钥、不创建 Release。测试覆盖有效输入、错误版本、错误 tag、错误仓库、HTTP URL、空签名和错误 Artifact 类型。
 
-### 阶段 B：签名与 updater 激活
+## 8. 历史上游脚本
 
-需要仓库所有者完成外部操作：
+源码仍保留：
 
-1. 本地生成独立 Tauri v1 updater 密钥；
-2. 安全离线备份私钥与密码；
-3. GitHub Actions Secret：`TAURI_PRIVATE_KEY`；
-4. GitHub Actions Secret：`TAURI_KEY_PASSWORD`；
-5. 向远端开发提供并核对可公开的 updater 公钥。
+- `updater/updater.mjs`；
+- `updater/updater-for-fix-runtime.mjs`。
 
-远端 AI 不得生成、接收、保存或提交真实私钥。
+package 入口已改名：
 
-只有密钥、Windows 构建和 updater 验收全部完成后，才能同时恢复：
+- `pnpm upstream:updater`；
+- `pnpm upstream:updater:fixRuntime`。
 
-- Cargo updater feature；
-- Tauri updater active；
-- 自有 endpoint；
-- 维护版公钥；
-- Rust 更新检查。
+这些脚本仍与上游官方 Release 耦合，只用于历史审计，不得用于维护版发布。
 
-## 7. 发布工作流边界
+## 9. Cargo 锁文件处理
 
-计划新增：
+移除 updater feature 后，旧锁文件仍携带 updater 专用依赖。Windows CI 先生成并展示精确差异，确认没有新增或升级业务依赖，也没有 Git 依赖提交漂移。
 
-- `custom-release-check.yml`：PR 与手动检查，不读取 Secret，不打包发布；
-- `custom-release-windows.yml`：仅手动触发，默认 `publish=false`。
+受限一次性工作流只修改并提交了 `src-tauri/Cargo.lock`：
 
-远端 AI 不得触发 `publish=true`。真实 Release、tag 和安装包发布必须由仓库所有者明确授权。
+- Commit：`a66a1544f250e0dd4cd5ac1910618812cbf81b31`；
+- v3 更新为 v4；
+- 删除 `minisign-verify 0.2.2`；
+- 删除旧 `zip 0.6.6`；
+- 清理 Tauri updater 不再需要的依赖引用。
 
-## 8. 安全要求
+一次性写权限工作流已经删除。最终常规门禁只使用 `contents: read` 和严格 `cargo check --locked`。
 
-- 不使用 `pull_request_target`；
-- Fork PR 不读取 Secret；
-- 默认权限 `contents: read`；
-- 只有发布 job 才可使用 `contents: write`；
-- 不输出私钥和密码；
-- 不从开发分支直接发布；
-- 不使用官方 URL、签名材料或 updater JSON；
-- 不提交用户配置、数据库、Token 或证书。
+## 10. 工作流
 
-## 9. 测试要求
+### `.github/workflows/custom-release-check.yml`
 
-远端至少完成：
-
-- 两组 Schema 测试；
-- `pnpm build`；
-- `cargo check --locked`；
-- release config 自检；
+- PR 指向 `custom/main` 或手动运行；
+- `contents: read`；
+- Node 21、pnpm 9、Rust 1.95.0；
+- frozen install；
+- 治理与发布配置自检；
 - manifest fixture；
-- YAML/JSON/Markdown 校验；
-- `git diff --check`；
-- 工作区干净。
+- 设置 Schema 13/13；
+- 结果 Schema 14/14；
+- `pnpm build`；
+- Windows `cargo check --locked`；
+- 补丁和工作区检查。
 
-本地 AI 最终只读验收：
+### `.github/workflows/custom-release-windows.yml`
 
-- Windows x64 NSIS 构建；
+- 仅 `workflow_dispatch`；
+- 默认 `publish=false`；
+- 阶段 A 的 `publish=true` 明确失败；
+- 构建 Windows x64 NSIS；
+- 生成 ASCII 安装包名称和 SHA-256；
+- 只上传保留 7 天的 Artifact；
+- 不创建 tag 或 Release。
+
+## 11. 已取得的远端构建证据
+
+一次性 Windows 验证 Run `30469891504` 已真实完成：
+
+- 发布前门禁通过；
+- `pnpm tauri build --bundles nsis` 通过；
+- 安装包整理通过；
+- SHA-256 生成通过；
+- Artifact 上传通过。
+
+Artifact：
+
+- ID：`8731609226`；
+- 名称：`pot-community-v3.1.0-elio.1-windows-x64-validation`；
+- ZIP 大小：`33,808,837` 字节；
+- 过期时间：`2026-08-05T16:30:11Z`；
+- 仅为短期验证产物，不是 Release。
+
+ZIP 内文件：
+
+- `pot-community_3.1.0-elio.1_windows-x64-setup.exe`：`33,819,100` 字节；
+- `pot-community_3.1.0-elio.1_windows-x64-setup.exe.sha256`。
+
+安装包 SHA-256：
+
+```text
+943bc5d97f2995393868738ae8d6ec31b58483317d871eda1b8336c5e17a4ef7
+```
+
+文件内 SHA-256 记录与实际安装包一致。
+
+该 Run 最终状态为 failure，仅因为最后的工作区清洁检查检测到未跟踪内容；构建和 Artifact 本身均成功。当前正在通过一次性诊断运行输出具体路径，并将在最终工作流中修复后重新取得完整成功证据。
+
+## 12. 尚未验证
+
+- 最终 HEAD 的全部 CI；
+- Windows 本地 NSIS 重建；
 - 安装、启动和卸载；
 - 与官方 Pot 并存；
-- 配置/数据库路径独立；
-- artifact 名称、版本、publisher 和 SHA-256；
-- updater 关闭阶段无更新请求；
-- 阶段 B 的有效签名升级和错误签名拒绝。
+- 配置、插件、缓存、数据库、日志、WebView 和自启动隔离；
+- 基本翻译和插件安装；
+- 全局快捷键冲突；
+- Updater 关闭阶段的网络观察；
+- 阶段 B 签名、升级、错误签名拒绝和回滚。
 
-## 10. 当前下一步
+## 13. 严格未做
 
-按 Task 从 T2 开始：
-
-1. 修改版本与应用身份；
-2. 增加 release config 自检；
-3. 整理历史 updater 脚本入口；
-4. 实现 manifest 生成器和测试；
-5. 添加非发布检查 workflow；
-6. 创建 Draft PR；
-7. 保持 updater 关闭，等待仓库所有者准备密钥。
+- 未创建 tag、GitHub Release 或正式安装包发布；
+- 未启用 Updater；
+- 未配置 endpoint、公钥、私钥、密码或证书；
+- 未迁移 Tauri 2；
+- 未整体升级依赖；
+- 未处理 single-instance；
+- 未重做 UI；
+- 未改变 Schema V2 语义；
+- 未直接修改 `custom/main`；
+- PR #6 未转 Ready、未合并。
