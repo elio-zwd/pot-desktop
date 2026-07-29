@@ -98,4 +98,10 @@ jobs:
               run: |
                   Remove-Item release-output -Recurse -Force
                   git diff --exit-code
-                  if (git status --short) { throw '构建后工作区不干净' }
+                  $status = @(git status --short --untracked-files=all)
+                  if ($status.Count -gt 0) {
+                      Write-Host 'BEGIN WORKTREE STATUS'
+                      $status | Write-Host
+                      Write-Host 'END WORKTREE STATUS'
+                      throw '构建后工作区不干净'
+                  }
