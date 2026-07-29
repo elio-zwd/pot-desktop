@@ -1,0 +1,101 @@
+name: 一次性 Windows x64 NSIS 验证
+
+on:
+    push:
+        branches:
+            - chore/custom-release-channel
+        paths:
+            - .github/workflows/validate-windows-nsis-once.yml
+
+permissions:
+    contents: read
+
+env:
+    COMMUNITY_RUST_VERSION: 1.95.0
+    COMMUNITY_VERSION: 3.1.0-elio.1
+
+jobs:
+    validate-windows-nsis:
+        name: 构建 Windows x64 NSIS 非发布产物
+        runs-on: windows-latest
+        steps:
+            - name: 检出开发分支
+              uses: actions/checkout@v4
+              with:
+                  ref: chore/custom-release-channel
+
+            - name: 配置 pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9
+
+            - name: 配置 Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 21
+                  cache: pnpm
+
+            - name: 配置固定 Rust 工具链
+              shell: pwsh
+              run: |
+                  rustup toolchain install $env:COMMUNITY_RUST_VERSION --profile minimal
+                  rustup default $env:COMMUNITY_RUST_VERSION
+
+            - name: 输出工具版本
+              shell: pwsh
+              run: |
+                  node --version
+                  pnpm --version
+                  rustc --version
+                  cargo --version
+
+            - name: 安装依赖
+              shell: pwsh
+              run: pnpm install --frozen-lockfile
+
+            - name: 运行发布前门禁
+              shell: pwsh
+              run: |
+                  pnpm release:check
+                  pnpm release:manifest:test
+                  node --test tests/plugin_config_schema.test.js
+                  node --test tests/plugin_result_schema.test.mjs
+                  cargo check --locked --manifest-path src-tauri/Cargo.toml
+
+            - name: 构建 Windows x64 NSIS
+              shell: pwsh
+              run: pnpm tauri build --bundles nsis
+
+            - name: 整理安装包与 SHA-256
+              shell: pwsh
+              run: |
+                  $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+                  if (-not $installer) {
+                      throw '未找到 NSIS 安装包'
+                  }
+
+                  New-Item -ItemType Directory -Force -Path release-output | Out-Null
+                  $outputName = "pot-community_${env:COMMUNITY_VERSION}_windows-x64-setup.exe"
+                  $outputPath = Join-Path release-output $outputName
+                  Copy-Item $installer.FullName $outputPath
+
+                  $hash = (Get-FileHash $outputPath -Algorithm SHA256).Hash.ToLowerInvariant()
+                  "$hash  $outputName" | Out-File -FilePath "$outputPath.sha256" -Encoding ascii
+
+                  Write-Host "Installer: $outputPath"
+                  Write-Host "SHA-256: $hash"
+
+            - name: 上传短期验证产物
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pot-community-v3.1.0-elio.1-windows-x64-validation
+                  path: release-output/*
+                  if-no-files-found: error
+                  retention-days: 7
+
+            - name: 清理并检查受跟踪工作区
+              shell: pwsh
+              run: |
+                  Remove-Item release-output -Recurse -Force
+                  git diff --exit-code
+                  if (git status --short) { throw '构建后工作区不干净' }
