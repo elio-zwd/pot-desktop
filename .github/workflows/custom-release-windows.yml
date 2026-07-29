@@ -65,10 +65,12 @@ jobs:
 
             - name: 校验版本与 tag
               shell: pwsh
+              env:
+                  INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
               run: |
                   $package = Get-Content package.json -Raw | ConvertFrom-Json
                   $expectedTag = "v$($package.version)"
-                  if ('${{ inputs.release_tag }}' -ne $expectedTag) {
+                  if ($env:INPUT_RELEASE_TAG -ne $expectedTag) {
                       throw "release_tag 必须等于 $expectedTag"
                   }
                   "COMMUNITY_VERSION=$($package.version)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -117,12 +119,25 @@ jobs:
                   if-no-files-found: error
                   retention-days: 7
 
-            - name: 清理临时发布目录
-              shell: pwsh
-              run: Remove-Item release-output -Recurse -Force
-
-            - name: 检查构建后受跟踪工作区
+            - name: 清理并检查构建工作区
               shell: pwsh
               run: |
+                  Remove-Item release-output -Recurse -Force
+
+                  # 任何受跟踪文件变化都必须直接失败，不能通过清理掩盖。
                   git diff --exit-code
-                  if (git status --short) { throw '构建后工作区不干净' }
+
+                  # Cargo、Vite 与 Tauri 的未跟踪/忽略构建输出属于一次性 CI 产物。
+                  $generated = @(git status --short --untracked-files=all)
+                  if ($generated.Count -gt 0) {
+                      Write-Host '清理以下未跟踪构建输出：'
+                      $generated | Write-Host
+                      git clean -ffdx
+                  }
+
+                  git diff --exit-code
+                  $remaining = @(git status --short --untracked-files=all)
+                  if ($remaining.Count -gt 0) {
+                      $remaining | Write-Host
+                      throw '构建清理后工作区仍不干净'
+                  }
