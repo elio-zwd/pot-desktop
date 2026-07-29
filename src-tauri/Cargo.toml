@@ -1,10 +1,10 @@
 [package]
 name = "pot"
 version = "0.0.0"
-description = "Pot 社区维护版"
-authors = ["Pot contributors", "Elio Community"]
+description = "Pot App"
+authors = ["pot-app"]
 license = "GPL-3.0-only"
-repository = "https://github.com/elio-zwd/pot-desktop"
+repository = "https://github.com/pot-app/pot-desktop"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
