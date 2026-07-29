@@ -95,6 +95,25 @@ test('特殊选项键不会污染对象原型', () => {
     assert.equal({}.polluted, undefined);
 });
 
+test('异常文本对象和配置值不会导致归一化抛错', () => {
+    const invalidText = { toString: null, valueOf: null };
+    const [group] = normalizePluginNeeds([
+        {
+            key: 'safeField',
+            display: invalidText,
+            description: invalidText,
+            placeholder: invalidText,
+            options: invalidText,
+        },
+    ]);
+    const [field] = group.fields;
+
+    assert.equal(field.display, 'safeField');
+    assert.equal(field.description, '');
+    assert.equal(field.placeholder, '');
+    assert.equal(resolvePluginFieldValue(field, { safeField: invalidText }), '');
+});
+
 test('密钥字段遮罩元数据不改变真实配置值', () => {
     const [group] = normalizePluginNeeds([{ key: 'apiKey', secret: true, multiline: true, rows: 4 }]);
     const [field] = group.fields;
