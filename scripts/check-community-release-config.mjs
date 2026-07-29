@@ -68,6 +68,7 @@ for (const relativePath of [
     'plans/CUSTOM_RELEASE_CHANNEL_PLAN.md',
     'tasks/CUSTOM_RELEASE_CHANNEL_TASKS.md',
     'handoffs/CUSTOM_RELEASE_CHANNEL_HANDOFF.md',
+    'docs/COMMUNITY_RELEASE_CHANNEL.md',
     'docs/RELEASE_NOTES_TEMPLATE.md',
     '.github/workflows/custom-release-check.yml',
     '.github/workflows/custom-release-windows.yml',
