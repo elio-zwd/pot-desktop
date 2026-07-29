@@ -22,6 +22,9 @@ on:
 permissions:
     contents: read
 
+env:
+    COMMUNITY_RUST_VERSION: 1.95.0
+
 jobs:
     windows-x64-build:
         name: Windows x64 NSIS 非发布构建
@@ -45,6 +48,12 @@ jobs:
               with:
                   node-version: 21
                   cache: pnpm
+
+            - name: 配置固定 Rust 工具链
+              shell: pwsh
+              run: |
+                  rustup toolchain install $env:COMMUNITY_RUST_VERSION --profile minimal
+                  rustup default $env:COMMUNITY_RUST_VERSION
 
             - name: 输出工具版本
               shell: pwsh
