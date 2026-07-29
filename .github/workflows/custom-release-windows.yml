@@ -124,8 +124,23 @@ jobs:
               run: |
                   Remove-Item release-output -Recurse -Force
 
-                  # 任何受跟踪文件变化都必须直接失败，不能通过清理掩盖。
+                  # 任何真实内容或暂存区变化都必须直接失败，不能通过恢复或清理掩盖。
                   git diff --exit-code
+                  git diff --cached --exit-code
+
+                  # Windows 构建会触碰 Cargo.toml，并可能因 LF/CRLF 让 status 显示 M；
+                  # 上面已确认内容无差异，因此只恢复该已知文件的工作区状态。
+                  $trackedStatus = @(git status --short --untracked-files=no)
+                  if ($trackedStatus -contains ' M src-tauri/Cargo.toml') {
+                      Write-Host '恢复无内容差异的 src-tauri/Cargo.toml 工作区状态'
+                      git restore --source=HEAD --worktree -- src-tauri/Cargo.toml
+                  }
+
+                  $remainingTracked = @(git status --short --untracked-files=no)
+                  if ($remainingTracked.Count -gt 0) {
+                      $remainingTracked | Write-Host
+                      throw '构建后仍存在受跟踪文件状态变化'
+                  }
 
                   # Cargo、Vite 与 Tauri 的未跟踪/忽略构建输出属于一次性 CI 产物。
                   $generated = @(git status --short --untracked-files=all)
@@ -136,6 +151,7 @@ jobs:
                   }
 
                   git diff --exit-code
+                  git diff --cached --exit-code
                   $remaining = @(git status --short --untracked-files=all)
                   if ($remaining.Count -gt 0) {
                       $remaining | Write-Host
