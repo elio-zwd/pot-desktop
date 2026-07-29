@@ -48,6 +48,7 @@ assert.equal(tauriConfig.package?.version, '../package.json', 'Tauri 版本必�
 assert.equal(tauriConfig.tauri?.bundle?.identifier, expected.identifier, 'Bundle identifier 不正确');
 assert.equal(tauriConfig.tauri?.bundle?.publisher, expected.publisher, 'Windows publisher 不正确');
 assert.equal(tauriConfig.tauri?.bundle?.active, true, 'Tauri bundler 必须启用');
+assert.deepEqual(tauriConfig.tauri?.bundle?.targets, ['nsis'], '首阶段只能启用 Windows NSIS bundle 目标');
 
 const updaterConfig = tauriConfig.tauri?.updater;
 assert.equal(updaterConfig?.active, false, '签名阶段完成前 updater 必须保持关闭');
