@@ -9,12 +9,20 @@ const MAX_OPTIONS = 100;
 const MAX_OPTION_VALUE_LENGTH = 256;
 const SUPPORTED_OPERATORS = new Set(['equals', 'notEquals', 'in', 'notIn']);
 
-function truncateString(value, maxLength, fallback = '') {
+function toSafeString(value, fallback = '') {
     if (value === null || value === undefined) {
         return fallback;
     }
 
-    return String(value).slice(0, maxLength);
+    try {
+        return String(value);
+    } catch {
+        return fallback;
+    }
+}
+
+function truncateString(value, maxLength, fallback = '') {
+    return toSafeString(value, fallback).slice(0, maxLength);
 }
 
 function normalizeRequiredString(value, maxLength) {
@@ -27,7 +35,13 @@ function normalizeOptions(options) {
         return null;
     }
 
-    const entries = Object.entries(options).slice(0, MAX_OPTIONS);
+    let entries;
+    try {
+        entries = Object.entries(options).slice(0, MAX_OPTIONS);
+    } catch {
+        return null;
+    }
+
     if (entries.length === 0) {
         return null;
     }
@@ -208,7 +222,7 @@ export function resolvePluginFieldValue(field, config) {
     }
 
     if (config && typeof config === 'object' && Object.prototype.hasOwnProperty.call(config, field.key)) {
-        return config[field.key] === null || config[field.key] === undefined ? '' : String(config[field.key]);
+        return toSafeString(config[field.key]);
     }
 
     if (field.type === 'select' && field.options) {
