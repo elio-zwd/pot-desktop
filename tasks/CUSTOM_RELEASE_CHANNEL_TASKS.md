@@ -18,7 +18,7 @@
 ## T1：规划与交接
 
 - [x] 新增 `plans/CUSTOM_RELEASE_CHANNEL_PLAN.md`。
-- [x] 新增 `handoffs/CUSTOM_RELEASE_CHANNEL_HANDOFF.md`。
+- [x] 新增并完成 `handoffs/CUSTOM_RELEASE_CHANNEL_HANDOFF.md`。
 - [x] 采用“阶段 A 非发布构建基础 + 阶段 B 签名与 Updater 激活”方案。
 - [x] 明确真实私钥只能由仓库所有者本地生成并通过 Secret 使用。
 
@@ -40,7 +40,7 @@
 - [x] 新增 `scripts/check-community-release-config.mjs`。
 - [x] 校验维护版 semver、package 名称、productName、identifier、publisher 和 NSIS target。
 - [x] 校验 updater 关闭、无 endpoint/pubkey、Cargo 无 updater feature、Rust 无网络调用。
-- [x] 校验发布 Plan、Task、Handoff、发布说明模板和工作流存在。
+- [x] 校验发布 Plan、Task、Handoff、发布说明和工作流存在。
 - [x] 自检已进入发布配置 CI。
 
 ## T4：历史 Updater 入口
@@ -72,7 +72,7 @@
 - [x] 权限为 `contents: read`，不读取发布 Secret，不创建 Release。
 - [x] 固定 Node 21、pnpm 9、Rust 1.95.0。
 - [x] 覆盖 frozen install、治理自检、发布自检、manifest、两组 Schema、前端 build、Windows `cargo check --locked` 和工作区检查。
-- [-] 等待最终 HEAD 的整套工作流稳定通过。
+- [-] 等待最终 HEAD 的整套工作流完成。
 
 ## T8：Windows x64 阶段 A 工作流
 
@@ -84,6 +84,8 @@
 - [x] 生成安装包 SHA-256。
 - [x] 仅上传保留 7 天的 Actions Artifact。
 - [x] 不使用 `pull_request_target`，不创建 tag 或 GitHub Release。
+- [x] 用户输入通过环境变量进入 PowerShell，不直接插入脚本源码。
+- [x] 先拒绝受跟踪差异，再清理一次性构建输出，最后验证工作区为空。
 - [!] `publish=true`、签名和正式 Release job 留给阶段 B。
 
 ## T9：Cargo 锁文件
@@ -121,11 +123,12 @@
 - [x] updater manifest fixture：通过。
 - [x] 发布配置自检：通过。
 - [x] `pnpm build`：通过。
-- [x] 固定 Rust 1.95.0 的 `cargo check --locked`：通过。
+- [x] 固定 Rust 1.95.0 的 `cargo check --locked`：已在分支运行中通过过。
 - [x] Windows x64 NSIS Release 构建：已实际成功。
-- [x] 验证 Artifact 已生成安装包和 SHA-256。
-- [-] 精确定位并修复安装包构建后的工作区清洁检查。
-- [-] 等待最终 HEAD 的 CI 全部通过。
+- [x] 验证 Artifact 已生成安装包和 SHA-256，且两者哈希一致。
+- [x] 临时构建与锁文件工作流均已删除。
+- [x] 永久 Windows 工作流已修复构建输出清洁策略。
+- [-] 等待最终 HEAD 的常规 CI 全部通过。
 
 ## T13：Windows 本地只读验收
 
@@ -138,6 +141,7 @@
 - [!] 验证基本翻译、插件安装、快捷键和首次启动。
 - [!] 验证 Updater 关闭阶段不访问更新端点。
 - [!] 阶段 A 未签名安装包可能显示“未知发布者”，不得误报为代码签名完成。
+- [!] 在最终 HEAD 手动运行永久 Windows x64 工作流并确认完整清理结果。
 
 ## T14：文档与 PR
 
