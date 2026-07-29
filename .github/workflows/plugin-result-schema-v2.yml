@@ -1,0 +1,45 @@
+name: Plugin Result Schema V2
+
+on:
+    pull_request:
+        branches: [custom/main]
+        paths:
+            - 'src/utils/plugin_result_schema.js'
+            - 'src/window/Translate/components/TargetArea/**'
+            - 'src/window/Translate/components/TranslationResult/**'
+            - 'tests/plugin_result_schema.test.mjs'
+            - 'tests/fixtures/plugin_result_schema_v2.mjs'
+            - 'package.json'
+            - 'pnpm-lock.yaml'
+            - '.github/workflows/plugin-result-schema-v2.yml'
+
+permissions:
+    contents: read
+
+jobs:
+    validate:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 21
+                  cache: pnpm
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+            - name: Run Schema V2 tests
+              run: node --test tests/plugin_result_schema.test.mjs
+            - name: Build web frontend
+              run: pnpm build
+            - name: Check whitespace
+              run: git diff --check origin/${{ github.base_ref }}...HEAD
+            - name: Check tracked worktree
+              run: test -z "$(git status --short --untracked-files=no)"
