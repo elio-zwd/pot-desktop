@@ -68,6 +68,15 @@ assert.equal(updaterConfig?.active, false, '社区维护版必须关闭 Tauri Up
 assert.equal(Object.hasOwn(updaterConfig, 'endpoints'), false, '运行时配置不得保留官方 updater endpoints');
 assert.equal(Object.hasOwn(updaterConfig, 'pubkey'), false, '运行时配置不得保留官方 updater pubkey');
 
+const cargoToml = readRepositoryFile('src-tauri/Cargo.toml');
+const tauriDependency = cargoToml.match(/tauri\s*=\s*\{[^}]*features\s*=\s*\[([\s\S]*?)\]/m);
+assert.notEqual(tauriDependency, null, '无法读取 Cargo.toml 中的 tauri features');
+assert.equal(
+    /["']updater["']/.test(tauriDependency[1]),
+    false,
+    'Tauri Updater 已关闭时不得继续启用 tauri/updater feature'
+);
+
 const updaterSource = readRepositoryFile('src-tauri/src/updater.rs');
 assert.equal(updaterSource.includes('tauri::updater'), false, '启动检查不得调用 Tauri 官方更新器');
 assert.equal(
