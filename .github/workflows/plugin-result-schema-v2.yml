@@ -35,6 +35,12 @@ jobs:
                   cache: pnpm
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
+            - name: Record environment
+              run: |
+                  node --version
+                  pnpm --version
+                  rustc --version
+                  pnpm tauri --version
             - name: Run Schema V2 tests
               run: node --test tests/plugin_result_schema.test.mjs
             - name: Build web frontend
