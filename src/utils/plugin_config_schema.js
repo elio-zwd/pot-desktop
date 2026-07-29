@@ -98,7 +98,13 @@ function normalizeVisibleWhen(condition) {
 }
 
 export function clampTextareaRows(value) {
-    const numericValue = Number(value);
+    let numericValue;
+    try {
+        numericValue = Number(value);
+    } catch {
+        return DEFAULT_TEXTAREA_ROWS;
+    }
+
     if (!Number.isFinite(numericValue)) {
         return DEFAULT_TEXTAREA_ROWS;
     }
