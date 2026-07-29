@@ -62,9 +62,17 @@ function hasVisibleResult(value) {
 }
 
 function resolveCollectionResultText(result) {
-    if (typeof result === 'string') return result;
-    if (isPluginResultV2(result)) return resolveResultCopyText(result);
-    return result?.toString?.() || '';
+    try {
+        if (typeof result === 'string') return result;
+        if (isPluginResultV2(result)) return resolveResultCopyText(result);
+        return result?.toString?.() || '';
+    } catch (_) {
+        return '';
+    }
+}
+
+function resolveBuiltinCollectionResult(result) {
+    return isPluginResultV2(result) ? resolveResultCopyText(result) : result;
 }
 
 export default function TargetArea(props) {
@@ -105,6 +113,7 @@ export default function TargetArea(props) {
             ? result !== ''
             : isStructuredResult && resultCopyText !== '' && resultCopyText.length <= MAX_STRUCTURED_TTS_LENGTH;
     const collectionResultText = useMemo(() => resolveCollectionResultText(result), [result]);
+    const builtinCollectionResult = useMemo(() => resolveBuiltinCollectionResult(result), [result]);
 
     function getInstanceName(instanceKey, serviceNameSupplier) {
         const instanceConfig = serviceInstanceConfigMap[instanceKey] ?? {};
@@ -657,7 +666,7 @@ export default function TargetArea(props) {
                                                 builtinCollectionServices[
                                                     getServiceName(collectionServiceInstanceName)
                                                 ]
-                                                    .collection(sourceText, collectionResultText, {
+                                                    .collection(sourceText, builtinCollectionResult, {
                                                         config: instanceConfig,
                                                     })
                                                     .then(
