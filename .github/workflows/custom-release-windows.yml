@@ -103,10 +103,14 @@ jobs:
             - name: 上传非发布构建产物
               uses: actions/upload-artifact@v4
               with:
-                  name: pot-community-${{ env.COMMUNITY_VERSION }}-windows-x64
+                  name: pot-community-${{ inputs.release_tag }}-windows-x64
                   path: release-output/*
                   if-no-files-found: error
                   retention-days: 7
+
+            - name: 清理临时发布目录
+              shell: pwsh
+              run: Remove-Item release-output -Recurse -Force
 
             - name: 检查构建后受跟踪工作区
               shell: pwsh
