@@ -32,17 +32,19 @@ function normalizeOptions(options) {
         return null;
     }
 
-    const normalized = {};
+    const normalizedEntries = [];
+    const seenKeys = new Set();
     for (const [rawKey, rawLabel] of entries) {
         const key = normalizeRequiredString(rawKey, MAX_FIELD_KEY_LENGTH);
-        if (!key || Object.prototype.hasOwnProperty.call(normalized, key)) {
+        if (!key || seenKeys.has(key)) {
             continue;
         }
 
-        normalized[key] = truncateString(rawLabel, MAX_OPTION_VALUE_LENGTH, key);
+        seenKeys.add(key);
+        normalizedEntries.push([key, truncateString(rawLabel, MAX_OPTION_VALUE_LENGTH, key)]);
     }
 
-    return Object.keys(normalized).length > 0 ? normalized : null;
+    return normalizedEntries.length > 0 ? Object.fromEntries(normalizedEntries) : null;
 }
 
 function normalizeConditionValue(value) {
