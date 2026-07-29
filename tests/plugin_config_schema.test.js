@@ -112,6 +112,7 @@ test('异常文本对象和配置值不会导致归一化抛错', () => {
     assert.equal(field.description, '');
     assert.equal(field.placeholder, '');
     assert.equal(resolvePluginFieldValue(field, { safeField: invalidText }), '');
+    assert.equal(clampTextareaRows(invalidText), pluginConfigSchemaLimits.defaultTextareaRows);
 });
 
 test('密钥字段遮罩元数据不改变真实配置值', () => {
