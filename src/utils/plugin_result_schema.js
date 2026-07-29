@@ -116,12 +116,20 @@ function normalizeTokens(tokens) {
 }
 
 export function isPluginResultV2(result) {
-    return isPlainObject(result) && result.schemaVersion === 2 && Array.isArray(result.sections);
+    try {
+        return isPlainObject(result) && result.schemaVersion === 2 && Array.isArray(result.sections);
+    } catch (_) {
+        return false;
+    }
 }
 
 export function isLegacyPluginResult(result) {
-    if (!isPlainObject(result)) return false;
-    return ['pronunciations', 'explanations', 'associations', 'sentence'].some((key) => key in result);
+    try {
+        if (!isPlainObject(result)) return false;
+        return ['pronunciations', 'explanations', 'associations', 'sentence'].some((key) => key in result);
+    } catch (_) {
+        return false;
+    }
 }
 
 export function normalizePluginResultSection(section, index = 0) {
