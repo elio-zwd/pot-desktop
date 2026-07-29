@@ -9,7 +9,7 @@
 - Draft PR：`https://github.com/elio-zwd/pot-desktop/pull/5`
 - PR Base：`custom/main`
 - 稳定 Base SHA：`b535ac2b1f39fead9eb8d0e0a1f95f1e991ff823`
-- 实现与任务状态基准 SHA：`72ea792b1932a3b3ff2c0569a9dfe9cdd8e77adb`
+- updater feature 修复实现 SHA：`7389b85a3419e6711608350a920f6e1d26b8e3f0`
 - 对外名称：`Pot 社区维护版`
 - 初期正式支持：Windows x64
 - 首个规划版本：`3.1.0-elio.1`
@@ -68,10 +68,11 @@
 
 1. `src-tauri/tauri.conf.json` 启用 Tauri Updater；
 2. 配置包含官方 `pot-app/pot-desktop` 更新端点和上游公钥；
-3. `src-tauri/src/main.rs` 在启动 `setup` 阶段调用 `check_update`；
-4. `src-tauri/src/updater.rs` 在配置缺失时默认写入 `check_update: true`；
-5. 随后调用 `tauri::updater::builder(...).check()`；
-6. `updater/*.mjs` 生成脚本也与官方 Release 和官方安装包强耦合。
+3. `src-tauri/Cargo.toml` 的 `tauri` features 包含 `updater`；
+4. `src-tauri/src/main.rs` 在启动 `setup` 阶段调用 `check_update`；
+5. `src-tauri/src/updater.rs` 在配置缺失时默认写入 `check_update: true`；
+6. 随后调用 `tauri::updater::builder(...).check()`；
+7. `updater/*.mjs` 生成脚本也与官方 Release 和官方安装包强耦合。
 
 这意味着定制构建默认可能连接并接受官方更新，存在版本来源混淆和维护版功能被覆盖的风险。
 
@@ -79,17 +80,19 @@
 
 ## 5. 已实施的更新器隔离
 
-本分支采用双层、可逆、不依赖伪服务的方案：
+本分支采用多层、可逆、不依赖伪服务的方案：
 
 - `src-tauri/tauri.conf.json`：`tauri.updater.active` 改为 `false`；
 - 运行时配置删除官方 updater `endpoints`；
 - 运行时配置删除上游 updater `pubkey`；
+- `src-tauri/Cargo.toml`：从 `tauri` features 移除 `updater`；
 - `src-tauri/src/updater.rs` 不再读取或写入 `check_update`；
 - `src-tauri/src/updater.rs` 不再调用 `tauri::updater`；
 - 启动时只记录“维护版尚未配置自有更新通道”，不发起更新网络请求；
 - 未配置任何不存在的替代更新地址；
 - 未修改 `main.rs` 的启动结构，便于后续独立发布分支恢复自有实现；
-- 未删除历史 updater 生成脚本，但政策和 CI 均禁止将其用于维护版发布。
+- 未删除历史 updater 生成脚本，但政策和 CI 均禁止将其用于维护版发布；
+- `scripts/maintenance-foundation-check.mjs` 会检查 Tauri 配置、Cargo feature 与 Rust 调用保持一致。
 
 即使旧用户配置仍有 `check_update: true`，当前启动路径也不会访问官方 Updater。
 
@@ -103,6 +106,7 @@
 - 安装：`pnpm install --frozen-lockfile`；
 - YAML：Ruby 标准库解析 workflow 与 Issue Form；
 - 治理自检：`node scripts/maintenance-foundation-check.mjs`；
+- 自检覆盖 `tauri.conf.json`、`Cargo.toml` 和 `updater.rs` 的 updater 一致性；
 - Schema：两组现有 Node 测试；
 - 构建：`pnpm build`；
 - 补丁：`git diff --check`；
@@ -110,32 +114,63 @@
 
 该 CI 不打包、不上传 Artifact、不创建 Release、不读取签名密钥。
 
-## 7. 已完成测试
+## 7. GitHub Actions 验证
 
-GitHub Actions Run：`30454764291`
-
-环境：
-
-- Ubuntu 24.04；
-- Node `v21.7.3`；
-- pnpm `9.15.9`；
-- Ruby `3.2.3`。
+updater feature 修复后的 GitHub Actions Run：`30457537318`
 
 结果：
 
 - `pnpm install --frozen-lockfile`：通过；
 - YAML 基础解析：通过；
-- 维护版配置、JSON、Markdown 本地链接和更新器隔离自检：通过；
+- 维护版配置、JSON、Markdown 本地链接和 updater feature 一致性自检：通过；
 - 设置 Schema V2：13/13 通过；
 - 结果 Schema V2：14/14 通过；
-- `pnpm build`：通过，17.14 秒；
+- `pnpm build`：通过；
 - `git diff --check`：通过；
 - 构建后 `git diff --exit-code`：通过；
 - 构建后 `git status --short`：空，工作区干净。
 
-后续 Task/Handoff 仅为文档收尾；最终分支 HEAD 仍需确认对应的最新维护版 CI 成功。
+后续文档收尾提交仍需以最新 HEAD 对应的维护版 CI 成功作为最终远端证据。
 
-## 8. 未修改范围
+## 8. 本地 AI 首轮验收与修复闭环
+
+本地 AI 在旧 HEAD `17056977ba4e51b8901beecbb990c91d81304544` 完成只读验收：
+
+- Node `v24.14.1`；
+- pnpm `11.17.0`；
+- Rust `1.95.0`；
+- Cargo `1.95.0`；
+- 设置 Schema V2：13/13；
+- 结果 Schema V2：14/14；
+- `pnpm build`：通过；
+- YAML、自检、文档和工作区检查：通过。
+
+首轮 `cargo check --manifest-path src-tauri/Cargo.toml` 报告：
+
+```text
+The `tauri` dependency features on the `Cargo.toml` file does not match the allowlist defined under `tauri.conf.json`.
+Please run `tauri dev` or `tauri build` or remove the `updater` feature.
+```
+
+该问题不是普通环境警告，而是关闭 Tauri Updater 后遗漏的 Cargo feature 配置不一致。
+
+已完成修复：
+
+- `65ff19ffb970534468ccd6156c666b0ee67fc5b7`：从 `Cargo.toml` 移除 `tauri/updater` feature；
+- `7389b85a3419e6711608350a920f6e1d26b8e3f0`：增加 updater feature 一致性自检；
+- GitHub Actions Run `30457537318`：完整通过。
+
+尚需本地 AI 在最新精确 HEAD 上重新执行：
+
+```text
+cargo check --locked --manifest-path src-tauri/Cargo.toml
+git diff --exit-code
+git status --short
+```
+
+只有上述 Rust 检查通过且工作区保持干净后，才可把本地结论从“带警告通过”升级为“通过”。
+
+## 9. 未修改范围
 
 本分支没有：
 
@@ -155,14 +190,14 @@ GitHub Actions Run：`30454764291`
 
 因此不重复完整桌面 Schema V2 人工 UI 验收。
 
-## 9. 后续分支
+## 10. 后续分支
 
 `chore/custom-release-channel` 应独立完成：
 
 - 写入 `3.1.0-elio.1`；
 - 维护版产品名、安装包名和必要品牌标识；
 - Windows x64 构建与安装验收；
-- 自有 updater 清单、端点和公钥；
+- 自有 updater 清单、端点、公钥和对应 Cargo feature 恢复；
 - 签名私钥的安全存储与最小权限；
 - 替换或重构历史 updater 生成脚本；
 - Release、升级、降级、失败恢复和回滚验收；
@@ -170,7 +205,7 @@ GitHub Actions Run：`30454764291`
 
 不得在该后续分支顺手处理 single-instance 或上游业务 PR。
 
-## 10. Draft PR 状态
+## 11. Draft PR 状态
 
 - PR：#5；
 - Base：`custom/main`；
@@ -181,7 +216,7 @@ GitHub Actions Run：`30454764291`
 - 未合并；
 - 未修改 `custom/main`。
 
-## 11. 本地 AI 验收边界
+## 12. 本地 AI 验收边界
 
 本地 AI 只允许：
 
