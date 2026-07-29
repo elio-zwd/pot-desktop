@@ -1,9 +1,9 @@
 name: 一次性 Windows x64 NSIS 验证
 
 on:
-    push:
+    pull_request:
         branches:
-            - chore/custom-release-channel
+            - custom/main
         paths:
             - .github/workflows/validate-windows-nsis-once.yml
 
