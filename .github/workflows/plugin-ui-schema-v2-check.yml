@@ -37,3 +37,8 @@ jobs:
 
             - name: Check whitespace errors
               run: git diff --check
+
+            - name: Check clean workspace
+              run: |
+                  git status --short
+                  test -z "$(git status --short)"
