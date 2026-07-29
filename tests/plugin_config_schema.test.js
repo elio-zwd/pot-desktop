@@ -84,6 +84,17 @@ test('错误 options 和未知 type 安全降级为普通输入框', () => {
     ]);
 });
 
+test('特殊选项键不会污染对象原型', () => {
+    const options = JSON.parse('{"__proto__":"原型选项","constructor":"构造器选项"}');
+    const [group] = normalizePluginNeeds([{ key: 'mode', type: 'select', options }]);
+    const [field] = group.fields;
+
+    assert.equal(Object.prototype.hasOwnProperty.call(field.options, '__proto__'), true);
+    assert.equal(field.options.__proto__, '原型选项');
+    assert.equal(field.options.constructor, '构造器选项');
+    assert.equal({}.polluted, undefined);
+});
+
 test('密钥字段遮罩元数据不改变真实配置值', () => {
     const [group] = normalizePluginNeeds([{ key: 'apiKey', secret: true, multiline: true, rows: 4 }]);
     const [field] = group.fields;
