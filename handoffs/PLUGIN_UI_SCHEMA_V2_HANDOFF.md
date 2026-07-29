@@ -1,101 +1,42 @@
 # 插件设置 Schema V2 开发交接
 
-## 1. 任务定位
-
-你负责 Pot 桌面端的插件设置页增强，不负责翻译结果卡片。
+## 1. 仓库与状态
 
 - 仓库：`https://github.com/elio-zwd/pot-desktop`
 - 分支：`feat/plugin-ui-schema-v2`
 - Base：`custom/main`
 - 初始 Base SHA：`594d32ede96acd106b0256deaa8bb440ffcdff40`
+- Draft PR：`https://github.com/elio-zwd/pot-desktop/pull/3`
+- PR 标题：`feat: 添加插件设置 Schema V2 与分组界面`
+- PR 状态：Draft，未转 Ready，未合并
 - 配套结果页分支：`feat/plugin-result-schema-v2`
 
-当前分支已经只写入规划文档，没有开始程序代码实现。请先确认远端最新 HEAD，再开始开发。
+远端 AI 已完成代码开发、纯函数测试、Web 构建、Schema 文档和 Draft PR。最终 HEAD 以分支和 PR 当前最新提交为准；本地 AI 只负责拉取最终指定 SHA 后进行只读构建与桌面端 UI 验收。
 
-## 2. 必读顺序
+## 2. 已实现能力
 
-1. `README.md`
-2. `AGENTS.md`
-3. `plans/PLUGIN_UI_SCHEMA_V2_PLAN.md`
-4. `tasks/PLUGIN_UI_SCHEMA_V2_TASKS.md`
-5. 本文档
-6. `docs/assets/plugin-ui-schema-v2-card-layering-concept.svg`
-7. 当前分支真实源码
+### Schema 归一化
 
-## 3. 已确认方向
-
-- 采用“卡片分层方案”作为设置页大致视觉方向。
-- 设置项按“基础使用、结果显示、标识符规则、高级 AI”分组。
-- “高级 AI”默认折叠。
-- API Key 第一阶段只做遮罩、显示/隐藏、多行输入、占位符和帮助文字。
-- API Key 继续保存在 Pot 当前本地配置中，本阶段不做加密。
-- 不实现“检查 Key”按钮。
-- 不开放插件自定义 CSS、HTML、JS 或 React 组件。
-- 旧版插件必须继续工作。
-
-## 4. 当前真实入口
-
-重点先阅读：
+文件：
 
 ```text
-src/window/Config/pages/Service/PluginConfig/index.jsx
+src/utils/plugin_config_schema.js
 ```
 
-当前组件：
-
-- 直接遍历 `pluginList[name].needs`；
-- 没有 `type` 时按输入框处理；
-- 只显式支持 `input` 和 `select`；
-- 使用 `useConfig(instanceKey, {}, { sync: false })` 保存临时配置；
-- 点击保存后调用 `setPluginConfig(pluginConfig, true)`；
-- 同时负责主页按钮和服务实例名称。
-
-不要破坏主页按钮、实例名称和保存流程。
-
-继续追踪并确认：
-
-- 插件 `info.json` 的读取和解析位置；
-- `pluginList` 的构造方式；
-- `useConfig` 的持久化语义；
-- 配置窗口的宽度和父级滚动布局；
-- 现有主题与 `config-item` 样式来源。
-
-## 5. 推荐实现步骤
-
-### 第一步：纯函数优先
-
-先新增 Schema 归一化模块和 Node 内置测试，再改 UI。不要把条件判断和容错全部写在 JSX 中。
-
-建议实现：
+导出：
 
 ```text
-normalizePluginNeeds()
-evaluateVisibleWhen()
-resolvePluginFieldValue()
-clampTextareaRows()
+normalizePluginNeeds(needs)
+evaluateVisibleWhen(condition, config)
+resolvePluginFieldValue(field, config)
+clampTextareaRows(value)
 ```
 
-### 第二步：拆分组件
+支持字段：
 
-建议：
-
-```text
-PluginConfig/index.jsx
-PluginConfig/PluginConfigGroup.jsx
-PluginConfig/PluginConfigField.jsx
-```
-
-可以根据真实代码结构调整命名，但必须保持职责清晰。
-
-### 第三步：实现卡片分组和高级折叠
-
-- 普通组默认展开；
-- 高级组默认折叠；
-- 折叠只影响 UI，不删除配置；
-- 无分组的旧插件尽量保持当前布局。
-
-### 第四步：实现字段增强
-
+- `group`
+- `groupDisplay`
+- `groupAdvanced`
 - `description`
 - `placeholder`
 - `secret`
@@ -103,7 +44,27 @@ PluginConfig/PluginConfigField.jsx
 - `rows`
 - `visibleWhen`
 
-第一版条件只支持：
+保留旧字段：
+
+- `key`
+- `display`
+- `type`
+- `options`
+
+安全规则：
+
+- 未声明 `type` 时按普通输入框处理；
+- 只明确支持 `input` 和 `select`，未知类型降级为输入框；
+- 错误或空 `options` 降级为输入框；
+- 字段键、标题、帮助文字、占位符、选项数量和选项文字均有限制；
+- `rows` 限制在 2—8，错误值回退为 4；
+- 特殊选项键不会污染对象原型；
+- 异常文本对象不会导致归一化抛错；
+- 不解析 HTML、CSS、JavaScript、函数或 React 组件。
+
+### 条件显示
+
+仅支持：
 
 ```text
 equals
@@ -112,98 +73,123 @@ in
 notIn
 ```
 
-无效条件默认显示字段。
+条件只读取当前插件实例配置。条件无效、引用键不存在或配置不可读取时，字段安全显示。字段隐藏只影响 UI，不删除或重置配置值。
 
-### 第五步：兼容验证
+### 设置界面
 
-至少验证：
-
-- 单输入框旧插件；
-- 下拉框旧插件；
-- `needs: []`；
-- V2 多分组；
-- V2 高级折叠；
-- V2 密码多行；
-- V2 条件显示。
-
-## 6. 与另一个 AI 的边界
-
-另一个对话在：
+文件：
 
 ```text
-feat/plugin-result-schema-v2
+src/window/Config/pages/Service/PluginConfig/index.jsx
+src/window/Config/pages/Service/PluginConfig/PluginConfigGroup.jsx
+src/window/Config/pages/Service/PluginConfig/PluginConfigField.jsx
 ```
 
-它会处理结果 Schema、卡片结果组件和 `TargetArea` 结果渲染。
+实现：
 
-本分支不要修改：
+- 普通分组使用 NextUI 轻量卡片；
+- 无分组旧插件使用无标题兼容布局；
+- `groupAdvanced: true` 默认折叠；
+- 多个高级组独立展开；
+- `description` 纯文本换行显示；
+- 输入框和多行输入支持 `placeholder`；
+- `secret` 默认遮罩并支持字段独立显示/隐藏；
+- `multiline` 使用 NextUI `Textarea`；
+- 长标签、长选项和窄窗口使用受控响应式布局；
+- 保留主页按钮、实例名称、保存、更新服务列表和关闭弹窗流程。
+
+## 3. 旧插件兼容
+
+已保持以下行为：
+
+- 旧版无 `type` 字段继续作为输入框；
+- 旧版 `type: input` 行为不变；
+- 旧版 `type: select` 保持选项顺序，第一个选项仍作为未保存时的默认显示值；
+- `needs: []` 继续显示无需配置提示；
+- 保存时继续写回原插件实例配置对象；
+- 隐藏字段、未知 Schema 和新增字段不会删除旧 Key；
+- 未修改旧插件配置存储格式。
+
+`info.json` 仍由原配置页读取并 `JSON.parse` 后构造 `pluginList`；`useConfig(instanceKey, {}, { sync: false })` 仍只在点击保存时通过 `setPluginConfig(pluginConfig, true)` 强制持久化。
+
+## 4. API Key 安全边界
+
+- `secret` 只提供界面遮罩，不代表加密；
+- API Key 继续使用 Pot 当前本地配置存储；
+- 未实现 Key 加密；
+- 未实现“检查 Key”按钮；
+- 未新增 Key 网络请求；
+- 测试只使用明确标注的假值，不包含真实 API Key。
+
+## 5. 测试与构建
+
+测试文件：
+
+```text
+tests/plugin_config_schema.test.js
+```
+
+执行命令：
+
+```bash
+node --test tests/plugin_config_schema.test.js
+pnpm build
+git diff --check
+git status --short
+```
+
+专用工作流：
+
+```text
+.github/workflows/plugin-ui-schema-v2-check.yml
+```
+
+工作流使用 Node 21、pnpm 9，冻结锁文件安装依赖，执行纯函数测试、Web 构建、空白错误检查和构建后工作区干净检查。
+
+## 6. 文档
+
+Schema 使用说明：
+
+```text
+docs/plugin-ui-schema-v2.md
+```
+
+内容包括完整 `needs` 示例、字段定义、四种条件运算符、分组规则、旧版兼容和安全限制。程序员划词翻译插件可按该文档接入，但本分支未修改插件仓库。
+
+## 7. 严格边界确认
+
+本分支未修改：
 
 ```text
 src/window/Translate/components/TargetArea/index.jsx
+package.json
+pnpm-lock.yaml
+src-tauri/**
 ```
 
-也不要创建结果 Schema、结果卡片组件或程序员划词翻译插件业务代码。
+也未实现：
 
-为了减少合并冲突：
+- 插件结果 Schema；
+- 结果卡片组件；
+- 程序员划词翻译插件业务逻辑；
+- Key 加密或 Key 检查；
+- 插件自定义 CSS、HTML、JavaScript 或 React 组件。
 
-- 不修改 `package.json`，除非确实无法完成且先向用户说明；
-- 不升级依赖；
-- 不全仓库格式化；
-- 不修改结果页相关文件；
-- 新增测试可直接使用 `node --test <path>` 运行。
+## 8. 待本地 AI 只读验收
 
-## 7. 开发中需要询问用户的情况
+本地 AI 不得修改源码、格式化、提交、推送、创建或合并 PR。只需在最终指定 SHA 上验证：
 
-遇到以下情况先暂停并询问：
+- Node 测试与 `pnpm build`；
+- 亮色和暗色主题；
+- 窄窗口；
+- 长中文标签与长下拉选项；
+- 高级组默认折叠和独立展开；
+- 密码默认遮罩，显示/隐藏不改变值；
+- 密码多行输入可编辑；
+- `visibleWhen` 实时显示/隐藏且不丢值；
+- 旧版输入框、下拉框和 `needs: []`；
+- 保存、关闭、重新打开后的配置值；
+- 实例名称和主页按钮；
+- 验收前后 `git status --short` 为空。
 
-- 必须新增第三方依赖；
-- 必须改变旧插件配置保存格式；
-- 密码多行控件在 NextUI 当前版本存在无法安全解决的限制；
-- 条件显示需要超出四种简单运算符；
-- 需要把高级折叠状态持久化；
-- 需要修改 Tauri/Rust 后端；
-- 需要引入 Key 加密或 Key 检查网络请求；
-- 需要修改结果页分支负责的文件。
-
-普通代码组织和组件拆分不需要反复询问，可根据 Plan 自主完成。
-
-## 8. 提交与 PR
-
-建议拆成小提交：
-
-```text
-test: 添加插件设置 Schema 归一化测试
-feat: 添加插件设置 Schema V2 归一化层
-refactor: 拆分插件设置字段与分组组件
-feat: 添加设置分组和高级折叠
-feat: 添加密码多行输入与条件显示
-docs: 更新插件设置 Schema V2 说明
-```
-
-不要为了匹配建议而制造无意义提交，实际可以合并相近步骤。
-
-完成后创建 Draft PR：
-
-```text
-Base: custom/main
-Head: feat/plugin-ui-schema-v2
-标题：feat: 添加插件设置 Schema V2 与分组界面
-```
-
-未经用户明确授权不得转 Ready 或合并。
-
-## 9. 完成汇报要求
-
-最终汇报必须包含：
-
-- 分支和 HEAD SHA；
-- 修改文件清单；
-- 实现的 Schema 字段；
-- 旧插件兼容策略；
-- API Key 安全边界；
-- 自动测试命令和结果；
-- `pnpm build` 结果；
-- Draft PR 地址；
-- 已知限制；
-- 给本地 AI 的只读验收 Prompt；
-- `git status --short` 是否为空。
+验收结果需回传环境版本、命令输出、截图、异常和最终工作区状态。
