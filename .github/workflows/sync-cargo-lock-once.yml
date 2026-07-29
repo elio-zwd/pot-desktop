@@ -1,0 +1,65 @@
+name: 一次性同步 Cargo 锁文件
+
+on:
+    push:
+        branches:
+            - chore/custom-release-channel
+        paths:
+            - .github/workflows/sync-cargo-lock-once.yml
+
+permissions:
+    contents: write
+
+env:
+    COMMUNITY_RUST_VERSION: 1.95.0
+
+jobs:
+    sync-cargo-lock:
+        name: 审计并同步 Cargo.lock
+        runs-on: windows-latest
+        steps:
+            - name: 检出开发分支
+              uses: actions/checkout@v4
+              with:
+                  ref: chore/custom-release-channel
+                  fetch-depth: 0
+
+            - name: 配置固定 Rust 工具链
+              shell: pwsh
+              run: |
+                  rustup toolchain install $env:COMMUNITY_RUST_VERSION --profile minimal
+                  rustup override set $env:COMMUNITY_RUST_VERSION
+
+            - name: 生成锁文件并限制变更范围
+              shell: pwsh
+              run: |
+                  cargo check --manifest-path src-tauri/Cargo.toml
+
+                  $changedFiles = @(git status --short | ForEach-Object { $_.Substring(3) })
+                  if ($changedFiles.Count -eq 0) {
+                      Write-Host 'Cargo.lock 无需同步'
+                      exit 0
+                  }
+
+                  if ($changedFiles.Count -ne 1 -or $changedFiles[0] -ne 'src-tauri/Cargo.lock') {
+                      git status --short
+                      throw '一次性任务只允许修改 src-tauri/Cargo.lock'
+                  }
+
+                  Write-Host 'BEGIN CARGO LOCK DIFF'
+                  git diff -- src-tauri/Cargo.lock
+                  Write-Host 'END CARGO LOCK DIFF'
+
+            - name: 提交锁文件
+              shell: pwsh
+              run: |
+                  if (-not (git status --short -- src-tauri/Cargo.lock)) {
+                      Write-Host '没有需要提交的锁文件变化'
+                      exit 0
+                  }
+
+                  git config user.name 'github-actions[bot]'
+                  git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+                  git add src-tauri/Cargo.lock
+                  git commit -m 'chore: 同步 Cargo 锁文件'
+                  git push origin HEAD:chore/custom-release-channel
