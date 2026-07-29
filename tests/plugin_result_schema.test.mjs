@@ -143,6 +143,23 @@ test('四类旧对象字段均保持可识别', () => {
     assert.equal(isLegacyPluginResult('文本结果'), false);
 });
 
+test('带异常属性访问的对象不会让检测或复制抛出', () => {
+    const hostile = new Proxy({}, {
+        get() {
+            throw new Error('blocked');
+        },
+        has() {
+            throw new Error('blocked');
+        },
+    });
+    assert.doesNotThrow(() => isPluginResultV2(hostile));
+    assert.doesNotThrow(() => isLegacyPluginResult(hostile));
+    assert.doesNotThrow(() => resolveResultCopyText(hostile));
+    assert.equal(isPluginResultV2(hostile), false);
+    assert.equal(isLegacyPluginResult(hostile), false);
+    assert.equal(resolveResultCopyText(hostile), '');
+});
+
 test('错误 V2 可安全回退给旧渲染器', () => {
     const malformed = { ...legacyFixture, schemaVersion: 2, sections: {} };
     assert.equal(isPluginResultV2(malformed), false);
