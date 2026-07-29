@@ -10,7 +10,6 @@ const expected = Object.freeze({
     productName: 'Pot 社区维护版',
     identifier: 'com.elio.potcommunity',
     publisher: 'Elio Community',
-    repository: 'https://github.com/elio-zwd/pot-desktop',
 });
 
 function readText(relativePath) {
@@ -56,8 +55,8 @@ assert.equal(Object.hasOwn(updaterConfig, 'endpoints'), false, '关闭阶段不�
 assert.equal(Object.hasOwn(updaterConfig, 'pubkey'), false, '关闭阶段不得配置 updater pubkey');
 
 const cargoToml = readText('src-tauri/Cargo.toml');
-assert.equal(cargoToml.includes('repository = "https://github.com/elio-zwd/pot-desktop"'), true, 'Cargo repository 不正确');
-assert.equal(cargoToml.includes('description = "Pot 社区维护版"'), true, 'Cargo description 不正确');
+assert.equal(cargoToml.includes('name = "pot"'), true, 'Cargo 包名应保持上游兼容值');
+assert.equal(cargoToml.includes('version = "0.0.0"'), true, 'Cargo 内部版本应保持锁文件兼容值');
 assert.equal(cargoToml.includes('"updater"'), false, '关闭阶段 Cargo 不得启用 tauri/updater feature');
 
 const updaterSource = readText('src-tauri/src/updater.rs');
