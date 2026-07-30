@@ -1,15 +1,18 @@
 {
-    "name": "pot",
+    "name": "pot-community",
     "private": true,
-    "version": "3.0.7",
+    "version": "3.1.0-elio.1",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "build": "vite build",
         "preview": "vite preview",
         "tauri": "tauri",
-        "updater": "node updater/updater.mjs",
-        "updater:fixRuntime": "node updater/updater-for-fix-runtime.mjs"
+        "release:check": "node scripts/check-community-release-config.mjs",
+        "release:manifest": "node scripts/generate-community-updater-manifest.mjs",
+        "release:manifest:test": "node --test tests/community_updater_manifest.test.mjs",
+        "upstream:updater": "node updater/updater.mjs",
+        "upstream:updater:fixRuntime": "node updater/updater-for-fix-runtime.mjs"
     },
     "dependencies": {
         "@nextui-org/react": "^2.4.8",

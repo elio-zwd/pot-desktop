@@ -1,0 +1,101 @@
+name: Pot 社区维护版发布配置门禁
+
+on:
+    pull_request:
+        branches:
+            - custom/main
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+env:
+    COMMUNITY_RUST_VERSION: 1.95.0
+
+jobs:
+    frontend-and-release-config:
+        name: 前端、Schema 与发布配置
+        runs-on: ubuntu-24.04
+        steps:
+            - name: 检出代码
+              uses: actions/checkout@v4
+
+            - name: 配置 pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9
+
+            - name: 配置 Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 21
+                  cache: pnpm
+
+            - name: 输出工具版本
+              run: |
+                  node --version
+                  pnpm --version
+
+            - name: 安装依赖
+              run: pnpm install --frozen-lockfile
+
+            - name: 校验 YAML
+              run: >-
+                  node --input-type=module -e "import fs from 'node:fs'; import prettier from 'prettier';
+                  for (const file of ['.github/workflows/custom-ci.yml','.github/workflows/custom-release-check.yml','.github/workflows/custom-release-windows.yml','.github/ISSUE_TEMPLATE/bug_report.yml']) {
+                  await prettier.format(fs.readFileSync(file,'utf8'), { parser: 'yaml' }); console.log('YAML OK:', file); }"
+
+            - name: 校验维护版治理基础
+              run: node scripts/maintenance-foundation-check.mjs
+
+            - name: 校验发布版本与身份
+              run: pnpm release:check
+
+            - name: 测试 updater manifest
+              run: pnpm release:manifest:test
+
+            - name: 测试设置 Schema V2
+              run: node --test tests/plugin_config_schema.test.js
+
+            - name: 测试结果 Schema V2
+              run: node --test tests/plugin_result_schema.test.mjs
+
+            - name: 构建前端
+              run: pnpm build
+
+            - name: 检查补丁格式
+              run: git diff --check
+
+            - name: 检查构建后工作区
+              run: |
+                  git diff --exit-code
+                  test -z "$(git status --short)"
+
+    rust-windows:
+        name: Windows Rust 配置检查
+        runs-on: windows-latest
+        steps:
+            - name: 检出代码
+              uses: actions/checkout@v4
+
+            - name: 配置固定 Rust 工具链
+              shell: pwsh
+              run: |
+                  rustup toolchain install $env:COMMUNITY_RUST_VERSION --profile minimal
+                  rustup default $env:COMMUNITY_RUST_VERSION
+
+            - name: 输出 Rust 版本
+              shell: pwsh
+              run: |
+                  rustc --version
+                  cargo --version
+
+            - name: Cargo 锁定检查
+              shell: pwsh
+              run: cargo check --locked --manifest-path src-tauri/Cargo.toml
+
+            - name: 检查 Cargo 后工作区
+              shell: pwsh
+              run: |
+                  git diff --exit-code
+                  if (git status --short) { throw 'Cargo 检查后工作区不干净' }

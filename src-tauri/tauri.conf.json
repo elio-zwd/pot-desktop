@@ -7,8 +7,8 @@
         "withGlobalTauri": false
     },
     "package": {
-        "productName": "pot",
-        "version": "3.0.7"
+        "productName": "Pot 社区维护版",
+        "version": "../package.json"
     },
     "tauri": {
         "allowlist": {
@@ -65,11 +65,14 @@
         "bundle": {
             "active": true,
             "category": "Utility",
-            "copyright": "GPLv3",
-            "targets": "all",
-            "identifier": "com.pot-app.desktop",
-            "longDescription": "A cross-platform text translation and ocr software",
-            "shortDescription": "Pot App",
+            "copyright": "GPL-3.0",
+            "targets": [
+                "nsis"
+            ],
+            "identifier": "com.elio.potcommunity",
+            "publisher": "Elio Community",
+            "longDescription": "Pot 社区维护版是基于 Pot 3.0.7 的非官方社区维护分支。",
+            "shortDescription": "Pot 社区维护版",
             "externalBin": [],
             "resources": [],
             "icon": [
