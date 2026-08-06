@@ -64,7 +64,7 @@ function createProgrammerFixture({
     };
 }
 
-const REAL_PLUGIN_CANDIDATES = [
+const FIXED_PLUGIN_CANDIDATE_FIXTURES = [
     createProgrammerFixture({
         original: 'NFC_WriteU16LE',
         tokens: ['NFC', 'write', 'U16', 'LE'],
@@ -138,8 +138,8 @@ test('setResult 是否存在不参与宿主能力判断', () => {
     assert.deepEqual(withoutSetResult.host.resultSchemas, [PROGRAMMER_RESULT_SCHEMA]);
 });
 
-test('四个真实插件候选 fixture 均标准化为 programmer 并保留完整 plainText', () => {
-    for (const fixture of REAL_PLUGIN_CANDIDATES) {
+test('四个固定插件候选 fixture 均标准化为 programmer 并保留完整 plainText', () => {
+    for (const fixture of FIXED_PLUGIN_CANDIDATE_FIXTURES) {
         const normalized = normalizeResultForDisplay(fixture);
 
         assert.equal(normalized.kind, 'programmer', fixture.identifier.original);
@@ -151,7 +151,7 @@ test('四个真实插件候选 fixture 均标准化为 programmer 并保留完�
 });
 
 test('复制、自动复制和历史统一使用完整 plainText', () => {
-    const fixture = REAL_PLUGIN_CANDIDATES[0];
+    const fixture = FIXED_PLUGIN_CANDIDATE_FIXTURES[0];
     const normalized = normalizeResultForDisplay(fixture);
     const targetEffects = createFinalResultEffects({
         result: normalized,
@@ -177,7 +177,7 @@ test('复制、自动复制和历史统一使用完整 plainText', () => {
 });
 
 test('非首个结果或剪贴板监听状态不会触发目标自动复制', () => {
-    const normalized = normalizeResultForDisplay(REAL_PLUGIN_CANDIDATES[1]);
+    const normalized = normalizeResultForDisplay(FIXED_PLUGIN_CANDIDATE_FIXTURES[1]);
 
     assert.equal(
         createFinalResultEffects({
@@ -207,7 +207,7 @@ test('同一查询流式更新保持组件 key，新查询使用新 key', () => 
 });
 
 test('local_fallback 保留安全诊断且日志描述不包含结果正文', () => {
-    const fixture = REAL_PLUGIN_CANDIDATES[3];
+    const fixture = FIXED_PLUGIN_CANDIDATE_FIXTURES[3];
     const normalized = normalizeResultForDisplay(fixture);
 
     assert.equal(normalized.summary.source, 'local_fallback');
@@ -217,7 +217,7 @@ test('local_fallback 保留安全诊断且日志描述不包含结果正文', ()
 });
 
 test('空 diagnostics 保持空数组，交由极简组件隐藏空区块', () => {
-    const normalized = normalizeResultForDisplay(REAL_PLUGIN_CANDIDATES[0]);
+    const normalized = normalizeResultForDisplay(FIXED_PLUGIN_CANDIDATE_FIXTURES[0]);
 
     assert.deepEqual(normalized.diagnostics, []);
 });
@@ -231,11 +231,14 @@ test('旧词典对象继续保留原始对象，不伪造可信全文', () => {
     assert.equal(normalized.kind, 'legacy-object');
     assert.equal(getResultRenderKind(normalized), 'legacy-object');
     assert.equal(getTrustedResultText(normalized), null);
-    assert.equal(createFinalResultEffects({
-        result: normalized,
-        sourceText: 'source',
-        autoCopy: 'target',
-        isPrimaryResult: true,
-        clipboardMonitor: false,
-    }).clipboardText, null);
+    assert.equal(
+        createFinalResultEffects({
+            result: normalized,
+            sourceText: 'source',
+            autoCopy: 'target',
+            isPrimaryResult: true,
+            clipboardMonitor: false,
+        }).clipboardText,
+        null
+    );
 });
