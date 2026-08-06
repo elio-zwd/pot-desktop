@@ -1,7 +1,7 @@
 import {
     createPluginHostCapabilities,
     normalizePluginResult,
-} from '../../../../utils/plugin_result';
+} from '../../../../utils/plugin_result.js';
 
 const NORMALIZED_KINDS = new Set([
     'text',
