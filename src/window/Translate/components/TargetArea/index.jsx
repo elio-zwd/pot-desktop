@@ -217,23 +217,29 @@ export default function TargetArea(props) {
     useEffect(() => {
         setResult(null);
         setError('');
-        if (
+
+        const requestReady =
             sourceText.trim() !== '' &&
             sourceLanguage &&
             targetLanguage &&
             autoCopy !== null &&
             hideWindow !== null &&
-            clipboardMonitor !== null
-        ) {
-            if (autoCopy === 'source' && !clipboardMonitor) {
-                writeText(sourceText).then(() => {
-                    if (hideWindow) {
-                        sendNotification({ title: t('common.write_clipboard'), body: sourceText });
-                    }
-                });
-            }
-            translate();
+            clipboardMonitor !== null;
+
+        if (!requestReady) {
+            translateID[index] = nanoid();
+            setIsLoading(false);
+            return;
         }
+
+        if (autoCopy === 'source' && !clipboardMonitor) {
+            writeText(sourceText).then(() => {
+                if (hideWindow) {
+                    sendNotification({ title: t('common.write_clipboard'), body: sourceText });
+                }
+            });
+        }
+        void translate();
     }, [
         sourceText,
         sourceLanguage,
@@ -283,6 +289,7 @@ export default function TargetArea(props) {
         setResultQueryId(id);
         setResult(null);
         setError('');
+        setIsLoading(false);
         return id;
     };
 
@@ -354,6 +361,15 @@ export default function TargetArea(props) {
         setIsLoading(false);
     };
 
+    const loadPluginForRequest = async (id, pluginType, serviceName) => {
+        try {
+            return await invoke_plugin(pluginType, serviceName);
+        } catch (reason) {
+            rejectRequest(id, reason);
+            return null;
+        }
+    };
+
     const translate = async () => {
         const id = beginRequest();
         const translateServiceName = getServiceName(currentTranslateServiceInstanceKey);
@@ -382,7 +398,9 @@ export default function TargetArea(props) {
                 enable: 'true',
             };
             const setHideOnce = invokeOnce(setHide);
-            const [func, utils] = await invoke_plugin('translate', translateServiceName);
+            const pluginRuntime = await loadPluginForRequest(id, 'translate', translateServiceName);
+            if (pluginRuntime === null) return;
+            const [func, utils] = pluginRuntime;
             const options = createPluginTranslateOptions({
                 config: instanceConfig,
                 detect: detectLanguage,
@@ -390,25 +408,29 @@ export default function TargetArea(props) {
                 utils,
             });
 
-            func(
-                resultSourceText,
-                pluginInfo.language[sourceLanguage],
-                pluginInfo.language[newTargetLanguage],
-                options
-            ).then(
-                (value) =>
-                    completeRequest({
-                        id,
-                        value,
-                        setHideOnce,
-                        serviceName: translateServiceName,
+            Promise.resolve()
+                .then(() =>
+                    func(
                         resultSourceText,
-                        historySourceLanguage: detectLanguage,
-                        historyTargetLanguage: newTargetLanguage,
-                        persistResult: true,
-                    }),
-                (reason) => rejectRequest(id, reason)
-            );
+                        pluginInfo.language[sourceLanguage],
+                        pluginInfo.language[newTargetLanguage],
+                        options
+                    )
+                )
+                .then(
+                    (value) =>
+                        completeRequest({
+                            id,
+                            value,
+                            setHideOnce,
+                            serviceName: translateServiceName,
+                            resultSourceText,
+                            historySourceLanguage: detectLanguage,
+                            historyTargetLanguage: newTargetLanguage,
+                            persistResult: true,
+                        }),
+                    (reason) => rejectRequest(id, reason)
+                );
             return;
         }
 
@@ -431,12 +453,19 @@ export default function TargetArea(props) {
         setHide(true);
         const instanceConfig = serviceInstanceConfigMap[currentTranslateServiceInstanceKey];
         const setHideOnce = invokeOnce(setHide);
-        builtinServices[translateServiceName]
-            .translate(resultSourceText, LanguageEnum[sourceLanguage], LanguageEnum[newTargetLanguage], {
-                config: instanceConfig,
-                detect: detectLanguage,
-                setResult: (value) => handleStreamingResult(id, value, setHideOnce),
-            })
+        Promise.resolve()
+            .then(() =>
+                builtinServices[translateServiceName].translate(
+                    resultSourceText,
+                    LanguageEnum[sourceLanguage],
+                    LanguageEnum[newTargetLanguage],
+                    {
+                        config: instanceConfig,
+                        detect: detectLanguage,
+                        setResult: (value) => handleStreamingResult(id, value, setHideOnce),
+                    }
+                )
+            )
             .then(
                 (value) =>
                     completeRequest({
@@ -524,7 +553,9 @@ export default function TargetArea(props) {
                 enable: 'true',
             };
             const setHideOnce = invokeOnce(setHide);
-            const [func, utils] = await invoke_plugin('translate', translateServiceName);
+            const pluginRuntime = await loadPluginForRequest(id, 'translate', translateServiceName);
+            if (pluginRuntime === null) return;
+            const [func, utils] = pluginRuntime;
             const options = createPluginTranslateOptions({
                 config: instanceConfig,
                 detect: detectLanguage,
@@ -532,25 +563,29 @@ export default function TargetArea(props) {
                 utils,
             });
 
-            func(
-                reverseSourceText,
-                pluginInfo.language[newSourceLanguage],
-                pluginInfo.language[newTargetLanguage],
-                options
-            ).then(
-                (value) =>
-                    completeRequest({
-                        id,
-                        value,
-                        setHideOnce,
-                        serviceName: translateServiceName,
-                        resultSourceText: reverseSourceText,
-                        historySourceLanguage: newSourceLanguage,
-                        historyTargetLanguage: newTargetLanguage,
-                        persistResult: false,
-                    }),
-                (reason) => rejectRequest(id, reason)
-            );
+            Promise.resolve()
+                .then(() =>
+                    func(
+                        reverseSourceText,
+                        pluginInfo.language[newSourceLanguage],
+                        pluginInfo.language[newTargetLanguage],
+                        options
+                    )
+                )
+                .then(
+                    (value) =>
+                        completeRequest({
+                            id,
+                            value,
+                            setHideOnce,
+                            serviceName: translateServiceName,
+                            resultSourceText: reverseSourceText,
+                            historySourceLanguage: newSourceLanguage,
+                            historyTargetLanguage: newTargetLanguage,
+                            persistResult: false,
+                        }),
+                    (reason) => rejectRequest(id, reason)
+                );
             return;
         }
 
@@ -564,16 +599,18 @@ export default function TargetArea(props) {
         setHide(true);
         const instanceConfig = serviceInstanceConfigMap[currentTranslateServiceInstanceKey];
         const setHideOnce = invokeOnce(setHide);
-        builtinServices[translateServiceName]
-            .translate(
-                reverseSourceText,
-                LanguageEnum[newSourceLanguage],
-                LanguageEnum[newTargetLanguage],
-                {
-                    config: instanceConfig,
-                    detect: newSourceLanguage,
-                    setResult: (value) => handleStreamingResult(id, value, setHideOnce),
-                }
+        Promise.resolve()
+            .then(() =>
+                builtinServices[translateServiceName].translate(
+                    reverseSourceText,
+                    LanguageEnum[newSourceLanguage],
+                    LanguageEnum[newTargetLanguage],
+                    {
+                        config: instanceConfig,
+                        detect: newSourceLanguage,
+                        setResult: (value) => handleStreamingResult(id, value, setHideOnce),
+                    }
+                )
             )
             .then(
                 (value) =>
