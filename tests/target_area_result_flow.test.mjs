@@ -451,6 +451,14 @@ test('工具栏与反向翻译只使用可信 resultCopyText 且不追加空格�
     assert.doesNotMatch(targetAreaSource, /result\.trim\(\)/);
 });
 
+test('源文本自动复制与通知绑定当前请求', () => {
+    assert.match(targetAreaSource, /void startInitialTranslation\(\);\s*const requestId = activeRequestIdRef\.current/);
+    assert.match(
+        targetAreaSource,
+        /autoCopy === 'source'[\s\S]*isRequestCurrent\(activeRequestIdRef\.current, requestId\)[\s\S]*writeText\(clipboardText\)[\s\S]*isRequestCurrent\(activeRequestIdRef\.current, requestId\)[\s\S]*sendNotification/
+    );
+});
+
 test('日志不拼接完整结果、配置或拒绝原因', () => {
     assert.doesNotMatch(targetAreaSource, /resolve:\s*['"]?\s*\+/);
     assert.doesNotMatch(targetAreaSource, /reject:\s*['"]?\s*\+/);
