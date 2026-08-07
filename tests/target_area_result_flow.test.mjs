@@ -7,6 +7,7 @@ import {
     createAutoCopyText,
     createRequestState,
     createTranslatePluginOptions,
+    decideRequestRejection,
     decideResultCommit,
     isRequestCurrent,
     recordStreamResult,
@@ -197,6 +198,41 @@ test('旧对象可以显示但没有可信副作用文本', () => {
     );
 });
 
+test('当前 reject 可提交错误，过期 reject 完全忽略', () => {
+    assert.equal(
+        decideRequestRejection({ activeRequestId: 'request-a', requestId: 'request-a' }),
+        'reject'
+    );
+    assert.equal(
+        decideRequestRejection({ activeRequestId: 'request-b', requestId: 'request-a' }),
+        'ignore'
+    );
+});
+
+test('无可信 copyText 的 V2 最终结果不覆盖有效流式显示', () => {
+    const stream = v2Result('流式完整文本');
+    const finalWithoutCopyText = {
+        schemaVersion: 2,
+        copyText: '   ',
+        sections: [{ id: 'summary', type: 'summary', content: '最终摘要' }],
+    };
+
+    assert.deepEqual(
+        decideResultCommit({
+            activeRequestId: 'request-a',
+            requestId: 'request-a',
+            value: finalWithoutCopyText,
+            latestStreamResult: stream,
+            final: true,
+        }),
+        {
+            type: 'preserve-stream',
+            result: stream,
+            trustedCopyText: null,
+        }
+    );
+});
+
 test('过期 resolve 不显示也不产生副作用', () => {
     assert.deepEqual(
         decideResultCommit({
@@ -345,6 +381,10 @@ const targetAreaSource = await readFile(
     new URL('../src/window/Translate/components/TargetArea/index.jsx', import.meta.url),
     'utf8'
 );
+const resultFlowSource = await readFile(
+    new URL('../src/window/Translate/components/TargetArea/result_flow.js', import.meta.url),
+    'utf8'
+);
 
 test('TargetArea 使用组件局部请求 ref 并删除模块级 translateID', () => {
     assert.match(targetAreaSource, /const activeRequestIdRef = useRef\(null\)/);
@@ -364,7 +404,7 @@ test('初始、重试和反向翻译都通过统一 startTranslation 生成新�
 
 test('插件初始和反向调用都由统一 options helper 注入新 host', () => {
     assert.match(targetAreaSource, /createTranslatePluginOptions\(\{/);
-    assert.match(targetAreaSource, /host: createPluginHostCapabilities\(\)/);
+    assert.match(resultFlowSource, /host: createPluginHostCapabilities\(\)/);
     assert.doesNotMatch(targetAreaSource, /instanceConfig\.host\s*=/);
     assert.doesNotMatch(targetAreaSource, /instanceConfig\[['"]host['"]\]\s*=/);
     assert.doesNotMatch(targetAreaSource, /pot\.programmer-result\.v1/);
@@ -395,7 +435,7 @@ test('最终副作用只读取 trustedCopyText 并保留流式结果', () => {
     assert.match(targetAreaSource, /result: trustedCopyText/);
     assert.doesNotMatch(targetAreaSource, /JSON\.stringify\(result/);
     assert.doesNotMatch(targetAreaSource, /String\(result\)/);
-    assert.doesNotMatch(targetAreaSource, /result\?\.toString/);
+    assert.doesNotMatch(resultFlowSource, /toString\s*\(/);
 });
 
 test('新请求重置渲染器，同请求流式更新沿用稳定 key', () => {
