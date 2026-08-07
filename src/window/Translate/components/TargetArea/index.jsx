@@ -49,17 +49,16 @@ import {
 import { sourceLanguageAtom, targetLanguageAtom } from '../LanguageArea';
 import { sourceTextAtom, detectLanguageAtom } from '../SourceArea';
 import TranslationResult from '../TranslationResult';
+import {
+    createAutoCopyText,
+    createTranslatePluginOptions,
+    decideRequestRejection,
+    decideResultCommit,
+    isRequestCurrent,
+    resolveTrustedCopyText,
+} from './result_flow';
 
 const MAX_STRUCTURED_TTS_LENGTH = 4000;
-let translateID = [];
-
-function normalizeResolvedResult(value) {
-    return typeof value === 'string' ? value.trim() : value;
-}
-
-function hasVisibleResult(value) {
-    return typeof value === 'string' ? value !== '' : value !== null && value !== undefined;
-}
 
 function resolveCollectionResultText(result) {
     try {
@@ -73,6 +72,16 @@ function resolveCollectionResultText(result) {
 
 function resolveBuiltinCollectionResult(result) {
     return isPluginResultV2(result) ? resolveResultCopyText(result) : result;
+}
+
+function formatRequestError(reason) {
+    if (typeof reason === 'string' && reason !== '') {
+        return reason;
+    }
+    if (reason instanceof Error && typeof reason.message === 'string' && reason.message !== '') {
+        return reason.message;
+    }
+    return 'Translation request failed';
 }
 
 export default function TargetArea(props) {
@@ -91,6 +100,7 @@ export default function TargetArea(props) {
     const [isLoading, setIsLoading] = useState(false);
     const [hide, setHide] = useState(true);
     const [result, setResult] = useState('');
+    const [resultRequestId, setResultRequestId] = useState('');
     const [error, setError] = useState('');
     const [ttsPluginInfo, setTtsPluginInfo] = useState();
 
@@ -99,19 +109,23 @@ export default function TargetArea(props) {
     const targetLanguage = useAtomValue(targetLanguageAtom);
     const detectLanguage = useAtomValue(detectLanguageAtom);
 
-    const { t } = useTranslation();
+    const activeRequestIdRef = useRef(null);
+    const latestStreamResultRef = useRef(null);
     const textAreaRef = useRef();
+    const { t } = useTranslation();
     const toastStyle = useToastStyle();
     const speak = useVoice();
     const { resolvedTheme } = useTheme();
 
-    const resultCopyText = useMemo(() => resolveResultCopyText(result), [result]);
+    const resultCopyText = useMemo(() => resolveTrustedCopyText(result) ?? '', [result]);
     const isStructuredResult = isPluginResultV2(result);
-    const canUseResultText = resultCopyText !== '' && (typeof result === 'string' || isStructuredResult);
+    const canUseResultText = resultCopyText !== '';
     const canSpeakResult =
         typeof result === 'string'
-            ? result !== ''
-            : isStructuredResult && resultCopyText !== '' && resultCopyText.length <= MAX_STRUCTURED_TTS_LENGTH;
+            ? resultCopyText !== ''
+            : isStructuredResult &&
+              resultCopyText !== '' &&
+              resultCopyText.length <= MAX_STRUCTURED_TTS_LENGTH;
     const collectionResultText = useMemo(() => resolveCollectionResultText(result), [result]);
     const builtinCollectionResult = useMemo(() => resolveBuiltinCollectionResult(result), [result]);
 
@@ -122,30 +136,383 @@ export default function TargetArea(props) {
 
     useEffect(() => {
         if (error) {
-            logError(`[${currentTranslateServiceInstanceKey}]happened error: ` + error);
+            logError(`[${currentTranslateServiceInstanceKey}] translation request failed`);
         }
-    }, [error]);
+    }, [error, currentTranslateServiceInstanceKey]);
 
-    useEffect(() => {
+    const invalidateCurrentRequest = () => {
+        activeRequestIdRef.current = null;
+        latestStreamResultRef.current = null;
+    };
+
+    const beginRequest = () => {
+        const requestId = nanoid();
+        activeRequestIdRef.current = requestId;
+        latestStreamResultRef.current = null;
+        setResultRequestId(requestId);
         setResult('');
         setError('');
-        if (
-            sourceText.trim() !== '' &&
-            sourceLanguage &&
-            targetLanguage &&
-            autoCopy !== null &&
-            hideWindow !== null &&
-            clipboardMonitor !== null
-        ) {
-            if (autoCopy === 'source' && !clipboardMonitor) {
-                writeText(sourceText).then(() => {
-                    if (hideWindow) {
-                        sendNotification({ title: t('common.write_clipboard'), body: sourceText });
-                    }
-                });
-            }
-            translate();
+        setIsLoading(true);
+        setHide(true);
+        return requestId;
+    };
+
+    const addToHistory = async ({
+        requestId,
+        text,
+        source,
+        target,
+        serviceInstanceKey,
+        result: historyResult,
+    }) => {
+        if (!isRequestCurrent(activeRequestIdRef.current, requestId)) {
+            return;
         }
+
+        const db = await Database.load('sqlite:history.db');
+        try {
+            if (!isRequestCurrent(activeRequestIdRef.current, requestId)) {
+                return;
+            }
+
+            try {
+                await db.execute(
+                    'INSERT into history (text, source, target, service, result, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [text, source, target, serviceInstanceKey, historyResult, Date.now()]
+                );
+            } catch {
+                if (!isRequestCurrent(activeRequestIdRef.current, requestId)) {
+                    return;
+                }
+                await db.execute(
+                    'CREATE TABLE history(id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT NOT NULL,source TEXT NOT NULL,target TEXT NOT NULL,service TEXT NOT NULL, result TEXT NOT NULL,timestamp INTEGER NOT NULL)'
+                );
+                if (!isRequestCurrent(activeRequestIdRef.current, requestId)) {
+                    return;
+                }
+                await db.execute(
+                    'INSERT into history (text, source, target, service, result, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [text, source, target, serviceInstanceKey, historyResult, Date.now()]
+                );
+            }
+        } finally {
+            db.close();
+        }
+    };
+
+    const runFinalSideEffects = ({
+        requestId,
+        inputText,
+        historySource,
+        historyTarget,
+        serviceInstanceKey,
+        trustedCopyText,
+    }) => {
+        if (!isRequestCurrent(activeRequestIdRef.current, requestId)) {
+            return;
+        }
+
+        if (!historyDisable) {
+            void addToHistory({
+                requestId,
+                text: inputText,
+                source: historySource,
+                target: historyTarget,
+                serviceInstanceKey,
+                result: trustedCopyText,
+            }).catch(() => {
+                logError('Failed to write translation history');
+            });
+        }
+
+        if (index !== 0 || clipboardMonitor) {
+            return;
+        }
+
+        const clipboardText = createAutoCopyText({
+            autoCopy,
+            sourceText: inputText,
+            trustedCopyText,
+        });
+        if (
+            clipboardText === null ||
+            !isRequestCurrent(activeRequestIdRef.current, requestId)
+        ) {
+            return;
+        }
+
+        void writeText(clipboardText)
+            .then(() => {
+                if (
+                    hideWindow &&
+                    isRequestCurrent(activeRequestIdRef.current, requestId)
+                ) {
+                    return sendNotification({
+                        title: t('common.write_clipboard'),
+                        body: clipboardText,
+                    });
+                }
+                return undefined;
+            })
+            .catch(() => {
+                logError('Failed to auto-copy final translation result');
+            });
+    };
+
+    const commitStreamResult = (requestId, value, revealResult) => {
+        const decision = decideResultCommit({
+            activeRequestId: activeRequestIdRef.current,
+            requestId,
+            value,
+            latestStreamResult: latestStreamResultRef.current,
+            final: false,
+        });
+
+        if (decision.type !== 'display') {
+            return;
+        }
+
+        latestStreamResultRef.current = decision.result;
+        setResult(decision.result);
+        revealResult();
+    };
+
+    const commitFinalResult = ({ requestId, value, context, revealResult }) => {
+        const decision = decideResultCommit({
+            activeRequestId: activeRequestIdRef.current,
+            requestId,
+            value,
+            latestStreamResult: latestStreamResultRef.current,
+            final: true,
+        });
+
+        if (decision.type === 'ignore') {
+            return;
+        }
+
+        setIsLoading(false);
+
+        if (decision.type === 'display') {
+            latestStreamResultRef.current = decision.result;
+            setResult(decision.result);
+            revealResult();
+        } else if (decision.type === 'preserve-stream') {
+            setResult(decision.result);
+            revealResult();
+        } else {
+            setResult('');
+            setError(t('translate.no_result', { defaultValue: 'No displayable result' }));
+            setHide(false);
+        }
+
+        if (decision.trustedCopyText !== null) {
+            runFinalSideEffects({
+                requestId,
+                ...context,
+                trustedCopyText: decision.trustedCopyText,
+            });
+        }
+    };
+
+    const rejectRequest = (requestId, requestError) => {
+        if (
+            decideRequestRejection({
+                activeRequestId: activeRequestIdRef.current,
+                requestId,
+            }) === 'ignore'
+        ) {
+            return;
+        }
+
+        info('Translation request rejected');
+        setError(formatRequestError(requestError));
+        setIsLoading(false);
+        setHide(false);
+    };
+
+    const startTranslation = async ({
+        inputText,
+        fromLanguage,
+        toLanguage,
+        pluginDetectOption,
+        builtinDetectOption,
+        historySource,
+        historyTarget,
+    }) => {
+        const requestId = beginRequest();
+        const translateServiceName = getServiceName(currentTranslateServiceInstanceKey);
+        const context = {
+            inputText,
+            historySource,
+            historyTarget,
+            serviceInstanceKey: translateServiceName,
+        };
+        let revealed = false;
+        const revealResult = () => {
+            if (!revealed && isRequestCurrent(activeRequestIdRef.current, requestId)) {
+                revealed = true;
+                setHide(false);
+            }
+        };
+
+        if (whetherPluginService(currentTranslateServiceInstanceKey)) {
+            const pluginInfo = pluginList.translate[translateServiceName];
+            if (!(fromLanguage in pluginInfo.language) || !(toLanguage in pluginInfo.language)) {
+                if (isRequestCurrent(activeRequestIdRef.current, requestId)) {
+                    setError('Language not supported');
+                    setIsLoading(false);
+                    setHide(false);
+                }
+                return;
+            }
+
+            try {
+                const [func, utils] = await invoke_plugin('translate', translateServiceName);
+                if (!isRequestCurrent(activeRequestIdRef.current, requestId)) {
+                    return;
+                }
+
+                const instanceConfig = serviceInstanceConfigMap[currentTranslateServiceInstanceKey] ?? {};
+                const options = createTranslatePluginOptions({
+                    config: instanceConfig,
+                    detect: pluginDetectOption,
+                    setResult: (value) => commitStreamResult(requestId, value, revealResult),
+                    utils,
+                });
+                Promise.resolve(
+                    func(
+                        inputText,
+                        pluginInfo.language[fromLanguage],
+                        pluginInfo.language[toLanguage],
+                        options
+                    )
+                ).then(
+                    (value) => {
+                        info('Translation request resolved');
+                        commitFinalResult({ requestId, value, context, revealResult });
+                    },
+                    (requestError) => rejectRequest(requestId, requestError)
+                );
+            } catch (requestError) {
+                rejectRequest(requestId, requestError);
+            }
+            return;
+        }
+
+        const service = builtinServices[translateServiceName];
+        const LanguageEnum = service.Language;
+        if (!(fromLanguage in LanguageEnum) || !(toLanguage in LanguageEnum)) {
+            if (isRequestCurrent(activeRequestIdRef.current, requestId)) {
+                setError('Language not supported');
+                setIsLoading(false);
+                setHide(false);
+            }
+            return;
+        }
+
+        const instanceConfig = serviceInstanceConfigMap[currentTranslateServiceInstanceKey] ?? {};
+        try {
+            Promise.resolve(
+                service.translate(inputText, LanguageEnum[fromLanguage], LanguageEnum[toLanguage], {
+                    config: instanceConfig,
+                    detect: builtinDetectOption,
+                    setResult: (value) => commitStreamResult(requestId, value, revealResult),
+                })
+            ).then(
+                (value) => {
+                    info('Translation request resolved');
+                    commitFinalResult({ requestId, value, context, revealResult });
+                },
+                (requestError) => rejectRequest(requestId, requestError)
+            );
+        } catch (requestError) {
+            rejectRequest(requestId, requestError);
+        }
+    };
+
+    const startInitialTranslation = () => {
+        let nextTargetLanguage = targetLanguage;
+        if (sourceLanguage === 'auto' && targetLanguage === detectLanguage) {
+            nextTargetLanguage = translateSecondLanguage;
+        }
+
+        return startTranslation({
+            inputText: sourceText.trim(),
+            fromLanguage: sourceLanguage,
+            toLanguage: nextTargetLanguage,
+            pluginDetectOption: detectLanguage,
+            builtinDetectOption: detectLanguage,
+            historySource: detectLanguage,
+            historyTarget: nextTargetLanguage,
+        });
+    };
+
+    const startReverseTranslation = () => {
+        if (!canUseResultText) {
+            return undefined;
+        }
+
+        const reverseTargetLanguage = sourceLanguage === 'auto' ? detectLanguage : sourceLanguage;
+        const reverseSourceLanguage = sourceLanguage === 'auto' ? 'auto' : targetLanguage;
+
+        return startTranslation({
+            inputText: resultCopyText,
+            fromLanguage: reverseSourceLanguage,
+            toLanguage: reverseTargetLanguage,
+            pluginDetectOption: detectLanguage,
+            builtinDetectOption: reverseSourceLanguage,
+            historySource: sourceLanguage === 'auto' ? detectLanguage : reverseSourceLanguage,
+            historyTarget: reverseTargetLanguage,
+        });
+    };
+
+    useEffect(() => {
+        invalidateCurrentRequest();
+        setResult('');
+        setResultRequestId('');
+        setError('');
+        setIsLoading(false);
+        setHide(true);
+
+        if (
+            sourceText.trim() === '' ||
+            !sourceLanguage ||
+            !targetLanguage ||
+            autoCopy === null ||
+            hideWindow === null ||
+            clipboardMonitor === null
+        ) {
+            return undefined;
+        }
+
+        void startInitialTranslation();
+        const requestId = activeRequestIdRef.current;
+
+        if (
+            autoCopy === 'source' &&
+            !clipboardMonitor &&
+            isRequestCurrent(activeRequestIdRef.current, requestId)
+        ) {
+            const clipboardText = sourceText;
+            void writeText(clipboardText)
+                .then(() => {
+                    if (
+                        hideWindow &&
+                        isRequestCurrent(activeRequestIdRef.current, requestId)
+                    ) {
+                        return sendNotification({
+                            title: t('common.write_clipboard'),
+                            body: clipboardText,
+                        });
+                    }
+                    return undefined;
+                })
+                .catch(() => {
+                    logError('Failed to auto-copy source text');
+                });
+        }
+
+        return undefined;
     }, [
         sourceText,
         sourceLanguage,
@@ -156,157 +523,12 @@ export default function TargetArea(props) {
         clipboardMonitor,
     ]);
 
-    const addToHistory = async (text, source, target, serviceInstanceKey, historyResultText) => {
-        const db = await Database.load('sqlite:history.db');
-
-        await db
-            .execute(
-                'INSERT into history (text, source, target, service, result, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
-                [text, source, target, serviceInstanceKey, historyResultText, Date.now()]
-            )
-            .then(
-                () => {
-                    db.close();
-                },
-                () => {
-                    db.execute(
-                        'CREATE TABLE history(id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT NOT NULL,source TEXT NOT NULL,target TEXT NOT NULL,service TEXT NOT NULL, result TEXT NOT NULL,timestamp INTEGER NOT NULL)'
-                    ).then(() => {
-                        db.close();
-                        addToHistory(text, source, target, serviceInstanceKey, historyResultText);
-                    });
-                }
-            );
-    };
-
-    function invokeOnce(fn) {
-        let isInvoke = false;
-        return (...args) => {
-            if (isInvoke) return;
-            fn(...args);
-            isInvoke = true;
-        };
-    }
-
-    const copyResolvedResult = (copyText) => {
-        if (!copyText || index !== 0 || clipboardMonitor) return;
-
-        switch (autoCopy) {
-            case 'target':
-                writeText(copyText).then(() => {
-                    if (hideWindow) {
-                        sendNotification({ title: t('common.write_clipboard'), body: copyText });
-                    }
-                });
-                break;
-            case 'source_target': {
-                const combinedText = sourceText.trim() + '\n\n' + copyText;
-                writeText(combinedText).then(() => {
-                    if (hideWindow) {
-                        sendNotification({ title: t('common.write_clipboard'), body: combinedText });
-                    }
-                });
-                break;
-            }
-            default:
-                break;
-        }
-    };
-
-    const finishTranslation = ({ value, id, newTargetLanguage, translateServiceName, setHideOnce }) => {
-        info(`[${currentTranslateServiceInstanceKey}]resolve:` + value);
-        if (translateID[index] !== id) return;
-
-        const resolvedResult = normalizeResolvedResult(value);
-        const copyText = resolveResultCopyText(resolvedResult);
-        setResult(resolvedResult);
-        setIsLoading(false);
-        if (hasVisibleResult(resolvedResult)) {
-            setHideOnce(false);
-        }
-
-        if (!historyDisable && copyText !== '') {
-            addToHistory(sourceText.trim(), detectLanguage, newTargetLanguage, translateServiceName, copyText);
-        }
-        copyResolvedResult(copyText);
-    };
-
-    const rejectTranslation = (reason, id) => {
-        info(`[${currentTranslateServiceInstanceKey}]reject:` + reason);
-        if (translateID[index] !== id) return;
-        setError(reason.toString());
-        setIsLoading(false);
-    };
-
-    const translate = async () => {
-        const id = nanoid();
-        translateID[index] = id;
-        const translateServiceName = getServiceName(currentTranslateServiceInstanceKey);
-
-        if (whetherPluginService(currentTranslateServiceInstanceKey)) {
-            const pluginInfo = pluginList.translate[translateServiceName];
-            if (!(sourceLanguage in pluginInfo.language) || !(targetLanguage in pluginInfo.language)) {
-                setError('Language not supported');
-                return;
-            }
-
-            let newTargetLanguage = targetLanguage;
-            if (sourceLanguage === 'auto' && targetLanguage === detectLanguage) {
-                newTargetLanguage = translateSecondLanguage;
-            }
-
-            setIsLoading(true);
-            setHide(true);
-            const instanceConfig = serviceInstanceConfigMap[currentTranslateServiceInstanceKey];
-            instanceConfig.enable = 'true';
-            const setHideOnce = invokeOnce(setHide);
-            const [func, utils] = await invoke_plugin('translate', translateServiceName);
-            func(sourceText.trim(), pluginInfo.language[sourceLanguage], pluginInfo.language[newTargetLanguage], {
-                config: instanceConfig,
-                detect: detectLanguage,
-                setResult: (value) => {
-                    if (translateID[index] !== id) return;
-                    setResult(value);
-                    setHideOnce(false);
-                },
-                utils,
-            }).then(
-                (value) => finishTranslation({ value, id, newTargetLanguage, translateServiceName, setHideOnce }),
-                (reason) => rejectTranslation(reason, id)
-            );
-            return;
-        }
-
-        const LanguageEnum = builtinServices[translateServiceName].Language;
-        if (!(sourceLanguage in LanguageEnum) || !(targetLanguage in LanguageEnum)) {
-            setError('Language not supported');
-            return;
-        }
-
-        let newTargetLanguage = targetLanguage;
-        if (sourceLanguage === 'auto' && targetLanguage === detectLanguage) {
-            newTargetLanguage = translateSecondLanguage;
-        }
-
-        setIsLoading(true);
-        setHide(true);
-        const instanceConfig = serviceInstanceConfigMap[currentTranslateServiceInstanceKey];
-        const setHideOnce = invokeOnce(setHide);
-        builtinServices[translateServiceName]
-            .translate(sourceText.trim(), LanguageEnum[sourceLanguage], LanguageEnum[newTargetLanguage], {
-                config: instanceConfig,
-                detect: detectLanguage,
-                setResult: (value) => {
-                    if (translateID[index] !== id) return;
-                    setResult(value);
-                    setHideOnce(false);
-                },
-            })
-            .then(
-                (value) => finishTranslation({ value, id, newTargetLanguage, translateServiceName, setHideOnce }),
-                (reason) => rejectTranslation(reason, id)
-            );
-    };
+    useEffect(
+        () => () => {
+            invalidateCurrentRequest();
+        },
+        []
+    );
 
     useEffect(() => {
         if (textAreaRef.current !== null && textAreaRef.current !== undefined) {
@@ -353,81 +575,6 @@ export default function TargetArea(props) {
             { config: instanceConfig }
         );
         speak(data);
-    };
-
-    const handleTranslateBack = async () => {
-        setError('');
-        const reverseSourceText = resultCopyText.trim();
-        let newTargetLanguage = sourceLanguage;
-        if (sourceLanguage === 'auto') {
-            newTargetLanguage = detectLanguage;
-        }
-        let newSourceLanguage = targetLanguage;
-        if (sourceLanguage === 'auto') {
-            newSourceLanguage = 'auto';
-        }
-
-        const setHideOnce = invokeOnce(setHide);
-        const handleReverseResolved = (value) => {
-            const normalized = normalizeResolvedResult(value);
-            if (typeof normalized === 'string' && normalized === reverseSourceText) {
-                setResult(normalized + ' ');
-            } else {
-                setResult(normalized);
-            }
-            setIsLoading(false);
-            if (hasVisibleResult(normalized)) {
-                setHideOnce(false);
-            }
-        };
-        const handleReverseRejected = (reason) => {
-            setError(reason.toString());
-            setIsLoading(false);
-        };
-
-        if (whetherPluginService(currentTranslateServiceInstanceKey)) {
-            const pluginInfo = pluginList.translate[getServiceName(currentTranslateServiceInstanceKey)];
-            if (!(newSourceLanguage in pluginInfo.language) || !(newTargetLanguage in pluginInfo.language)) {
-                setError('Language not supported');
-                return;
-            }
-
-            setIsLoading(true);
-            setHide(true);
-            const instanceConfig = serviceInstanceConfigMap[currentTranslateServiceInstanceKey];
-            instanceConfig.enable = 'true';
-            const [func, utils] = await invoke_plugin('translate', getServiceName(currentTranslateServiceInstanceKey));
-            func(reverseSourceText, pluginInfo.language[newSourceLanguage], pluginInfo.language[newTargetLanguage], {
-                config: instanceConfig,
-                detect: detectLanguage,
-                setResult: (value) => {
-                    setResult(value);
-                    setHideOnce(false);
-                },
-                utils,
-            }).then(handleReverseResolved, handleReverseRejected);
-            return;
-        }
-
-        const LanguageEnum = builtinServices[getServiceName(currentTranslateServiceInstanceKey)].Language;
-        if (!(newSourceLanguage in LanguageEnum) || !(newTargetLanguage in LanguageEnum)) {
-            setError('Language not supported');
-            return;
-        }
-
-        setIsLoading(true);
-        setHide(true);
-        const instanceConfig = serviceInstanceConfigMap[currentTranslateServiceInstanceKey];
-        builtinServices[getServiceName(currentTranslateServiceInstanceKey)]
-            .translate(reverseSourceText, LanguageEnum[newSourceLanguage], LanguageEnum[newTargetLanguage], {
-                config: instanceConfig,
-                detect: newSourceLanguage,
-                setResult: (value) => {
-                    setResult(value);
-                    setHideOnce(false);
-                },
-            })
-            .then(handleReverseResolved, handleReverseRejected);
     };
 
     const [boundRef, bounds] = useMeasure({ scroll: true });
@@ -555,6 +702,7 @@ export default function TargetArea(props) {
                 <div ref={boundRef}>
                     <CardBody className={`p-[12px] pb-0 ${hide && 'h-0 p-0'}`}>
                         <TranslationResult
+                            key={resultRequestId}
                             result={result}
                             appFontSize={appFontSize}
                             textAreaRef={textAreaRef}
@@ -585,7 +733,7 @@ export default function TargetArea(props) {
                                     isDisabled={!canSpeakResult}
                                     onPress={() => {
                                         handleSpeak().catch((reason) => {
-                                            toast.error(reason.toString(), { style: toastStyle });
+                                            toast.error(formatRequestError(reason), { style: toastStyle });
                                         });
                                     }}
                                 >
@@ -609,7 +757,9 @@ export default function TargetArea(props) {
                                     variant='light'
                                     size='sm'
                                     isDisabled={!canUseResultText}
-                                    onPress={handleTranslateBack}
+                                    onPress={() => {
+                                        void startReverseTranslation();
+                                    }}
                                 >
                                     <TbTransformFilled className='text-[16px]' />
                                 </Button>
@@ -621,9 +771,7 @@ export default function TargetArea(props) {
                                     size='sm'
                                     className={`${error === '' && 'hidden'}`}
                                     onPress={() => {
-                                        setError('');
-                                        setResult('');
-                                        translate();
+                                        void startInitialTranslation();
                                     }}
                                 >
                                     <GiCycle className='text-[16px]' />
@@ -657,7 +805,7 @@ export default function TargetArea(props) {
                                                         });
                                                     },
                                                     (reason) => {
-                                                        toast.error(reason.toString(), { style: toastStyle });
+                                                        toast.error(formatRequestError(reason), { style: toastStyle });
                                                     }
                                                 );
                                             } else {
@@ -676,7 +824,9 @@ export default function TargetArea(props) {
                                                             });
                                                         },
                                                         (reason) => {
-                                                            toast.error(reason.toString(), { style: toastStyle });
+                                                            toast.error(formatRequestError(reason), {
+                                                                style: toastStyle,
+                                                            });
                                                         }
                                                     );
                                             }
