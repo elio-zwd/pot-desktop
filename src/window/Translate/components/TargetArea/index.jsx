@@ -55,6 +55,7 @@ import {
     decideRequestRejection,
     decideResultCommit,
     isRequestCurrent,
+    resolveTrustedCopyText,
 } from './result_flow';
 
 const MAX_STRUCTURED_TTS_LENGTH = 4000;
@@ -116,15 +117,14 @@ export default function TargetArea(props) {
     const speak = useVoice();
     const { resolvedTheme } = useTheme();
 
-    const resultCopyText = useMemo(() => resolveResultCopyText(result), [result]);
+    const resultCopyText = useMemo(() => resolveTrustedCopyText(result) ?? '', [result]);
     const isStructuredResult = isPluginResultV2(result);
-    const canUseResultText =
-        resultCopyText.trim() !== '' && (typeof result === 'string' || isStructuredResult);
+    const canUseResultText = resultCopyText !== '';
     const canSpeakResult =
         typeof result === 'string'
-            ? resultCopyText.trim() !== ''
+            ? resultCopyText !== ''
             : isStructuredResult &&
-              resultCopyText.trim() !== '' &&
+              resultCopyText !== '' &&
               resultCopyText.length <= MAX_STRUCTURED_TTS_LENGTH;
     const collectionResultText = useMemo(() => resolveCollectionResultText(result), [result]);
     const builtinCollectionResult = useMemo(() => resolveBuiltinCollectionResult(result), [result]);
