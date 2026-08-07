@@ -485,11 +485,21 @@ export default function TargetArea(props) {
             return undefined;
         }
 
-        if (autoCopy === 'source' && !clipboardMonitor) {
+        void startInitialTranslation();
+        const requestId = activeRequestIdRef.current;
+
+        if (
+            autoCopy === 'source' &&
+            !clipboardMonitor &&
+            isRequestCurrent(activeRequestIdRef.current, requestId)
+        ) {
             const clipboardText = sourceText;
             void writeText(clipboardText)
                 .then(() => {
-                    if (hideWindow) {
+                    if (
+                        hideWindow &&
+                        isRequestCurrent(activeRequestIdRef.current, requestId)
+                    ) {
                         return sendNotification({
                             title: t('common.write_clipboard'),
                             body: clipboardText,
@@ -502,7 +512,6 @@ export default function TargetArea(props) {
                 });
         }
 
-        void startInitialTranslation();
         return undefined;
     }, [
         sourceText,
