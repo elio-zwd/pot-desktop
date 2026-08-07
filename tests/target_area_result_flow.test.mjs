@@ -444,7 +444,8 @@ test('新请求重置渲染器，同请求流式更新沿用稳定 key', () => {
     assert.match(targetAreaSource, /<TranslationResult\s+key=\{resultRequestId\}/);
 });
 
-test('反向翻译只使用可信 resultCopyText 且不追加空格刷新', () => {
+test('工具栏与反向翻译只使用可信 resultCopyText 且不追加空格刷新', () => {
+    assert.match(targetAreaSource, /const resultCopyText = useMemo\(\(\) => resolveTrustedCopyText\(result\) \?\? '', \[result\]\)/);
     assert.match(targetAreaSource, /inputText: resultCopyText/);
     assert.doesNotMatch(targetAreaSource, /normalized \+ ' '/);
     assert.doesNotMatch(targetAreaSource, /result\.trim\(\)/);
