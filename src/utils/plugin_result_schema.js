@@ -1,6 +1,7 @@
 const SECTION_TYPES = new Set(['summary', 'metadata', 'dictionary', 'code-list', 'note', 'status']);
 const SOURCE_TYPES = new Set(['local', 'ai', 'mixed', 'unknown']);
 const SEVERITIES = new Set(['info', 'success', 'warning', 'error']);
+const PAIRED_STATES = new Set(['loading', 'complete']);
 
 export const PLUGIN_RESULT_SCHEMA_LIMITS = Object.freeze({
     sections: 24,
@@ -59,6 +60,20 @@ function normalizeCopyText(value, fallback = '') {
     return text || normalizePrimitive(fallback, PLUGIN_RESULT_SCHEMA_LIMITS.copyText, true);
 }
 
+function normalizePairedContent(value, { allowEmpty = false } = {}) {
+    if (!isPlainObject(value)) return null;
+    const state = PAIRED_STATES.has(value.state) ? value.state : 'complete';
+    const content = normalizeOptionalText(value.content);
+    if (!allowEmpty && !content) return null;
+    if (state === 'complete' && !content) return null;
+    return {
+        label: normalizePrimitive(value.label, PLUGIN_RESULT_SCHEMA_LIMITS.text) || 'AI 翻译',
+        content,
+        source: normalizeSource(value.source),
+        state,
+    };
+}
+
 function normalizeMetadataItem(item) {
     if (!isPlainObject(item)) return null;
     const label = normalizePrimitive(item.label, PLUGIN_RESULT_SCHEMA_LIMITS.text);
@@ -78,13 +93,16 @@ function normalizeDictionaryItem(item) {
     const meaning = normalizeOptionalText(item.meaning);
     if (!token || (!phonetic && !meaning)) return null;
     const fallback = `${token}${phonetic ? ` ${phonetic}` : ''}${meaning ? `：${meaning}` : ''}`;
-    return {
+    const result = {
         token,
         phonetic,
         meaning,
         source: normalizeSource(item.source),
         copyText: normalizeCopyText(item.copyText, fallback),
     };
+    const paired = normalizePairedContent(item.paired, { allowEmpty: true });
+    if (paired) result.paired = paired;
+    return result;
 }
 
 function normalizeCodeItem(item) {
@@ -144,7 +162,7 @@ export function normalizePluginResultSection(section, index = 0) {
     if (type === 'summary') {
         const content = normalizePrimitive(section.content, PLUGIN_RESULT_SCHEMA_LIMITS.text);
         if (!content) return null;
-        return {
+        const result = {
             id,
             type,
             title,
@@ -153,6 +171,9 @@ export function normalizePluginResultSection(section, index = 0) {
             copyText: normalizeCopyText(section.copyText, content),
             ...collapsible,
         };
+        const paired = normalizePairedContent(section.paired, { allowEmpty: true });
+        if (paired) result.paired = paired;
+        return result;
     }
 
     if (type === 'metadata') {
@@ -165,7 +186,10 @@ export function normalizePluginResultSection(section, index = 0) {
     if (type === 'dictionary') {
         const items = normalizeItems(section.items, normalizeDictionaryItem);
         if (items.length === 0) return null;
-        return { id, type, title, items, ...collapsible };
+        const result = { id, type, title, items, ...collapsible };
+        const paired = normalizePairedContent(section.paired, { allowEmpty: true });
+        if (paired) result.paired = paired;
+        return result;
     }
 
     if (type === 'code-list') {

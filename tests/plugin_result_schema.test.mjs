@@ -111,6 +111,67 @@ test('恶意 UI 注入字段被白名单归一化忽略', () => {
     }
 });
 
+test('成对内容只接受固定文本、来源和加载状态', () => {
+    const normalized = normalizePluginResultV2({
+        schemaVersion: 2,
+        sections: [
+            {
+                id: 'summary',
+                type: 'summary',
+                content: '获取值',
+                source: 'local',
+                paired: {
+                    label: 'AI 翻译',
+                    content: '',
+                    source: 'ai',
+                    state: 'loading',
+                    html: '<img onerror=alert(1)>',
+                    className: 'fixed inset-0',
+                },
+            },
+            {
+                id: 'dictionary',
+                type: 'dictionary',
+                title: '逐词释义',
+                paired: { label: 'AI 翻译', content: '', source: 'ai', state: 'loading' },
+                items: [
+                    {
+                        token: 'get',
+                        phonetic: 'ɡet',
+                        meaning: '获取；得到',
+                        source: 'local',
+                        paired: { content: '', source: 'ai', state: 'loading', style: 'color:red' },
+                    },
+                ],
+            },
+        ],
+    });
+
+    assert.deepEqual(normalized.sections[0].paired, {
+        label: 'AI 翻译',
+        content: '',
+        source: 'ai',
+        state: 'loading',
+    });
+    assert.deepEqual(normalized.sections[1].items[0].paired, {
+        label: 'AI 翻译',
+        content: '',
+        source: 'ai',
+        state: 'loading',
+    });
+    assert.equal('html' in normalized.sections[0].paired, false);
+    assert.equal('style' in normalized.sections[1].items[0].paired, false);
+});
+
+test('成对内容拒绝无文本的完成状态', () => {
+    const section = normalizePluginResultSection({
+        type: 'summary',
+        content: '本地释义',
+        paired: { label: 'AI 翻译', content: '', source: 'ai', state: 'complete' },
+    });
+    assert.equal('paired' in section, false);
+});
+
 test('缺少顶层 copyText 时从 section 生成纯文本回退', () => {
     const normalized = normalizePluginResultV2({
         schemaVersion: 2,
