@@ -6,6 +6,10 @@ import {
     resolveResultCopyText,
 } from '../../../../utils/plugin_result_schema.js';
 
+export const RESULT_STAGE_V1 = 'pot.result-stage.v1';
+export const LOCAL_COMPLETE_STAGE = 'local-complete';
+const MAX_COPY_TEXT_LENGTH = 12000;
+
 export function createTranslatePluginOptions({ config, detect, setResult, utils }) {
     return {
         config,
@@ -76,6 +80,41 @@ export function resolveTrustedCopyText(value) {
 
     const copyText = resolveResultCopyText(normalized);
     return typeof copyText === 'string' && copyText.trim() !== '' ? copyText : null;
+}
+
+function resolveStageCopyText(value) {
+    if (typeof value !== 'string') return null;
+    const text = value.trim();
+    return text !== '' && text.length <= MAX_COPY_TEXT_LENGTH ? text : null;
+}
+
+export function decideLocalCheckpointCommit({
+    activeRequestId,
+    requestId,
+    value,
+    metadata,
+    checkpointCommitted,
+}) {
+    if (!isRequestCurrent(activeRequestId, requestId) || checkpointCommitted === true) {
+        return null;
+    }
+    if (
+        metadata === null ||
+        typeof metadata !== 'object' ||
+        Array.isArray(metadata) ||
+        metadata.schema !== RESULT_STAGE_V1 ||
+        metadata.stage !== LOCAL_COMPLETE_STAGE
+    ) {
+        return null;
+    }
+
+    const allowedKeys = new Set(['schema', 'stage', 'copyText']);
+    if (Object.keys(metadata).some((key) => !allowedKeys.has(key))) return null;
+
+    const trustedCopyText = Object.hasOwn(metadata, 'copyText')
+        ? resolveStageCopyText(metadata.copyText)
+        : resolveTrustedCopyText(value);
+    return trustedCopyText === null ? null : { trustedCopyText };
 }
 
 export function recordStreamResult(state, requestId, value) {
@@ -164,4 +203,10 @@ export function createAutoCopyText({ autoCopy, sourceText, trustedCopyText }) {
     }
 
     return null;
+}
+
+export function queueCurrentRequestEffect(previous, { isCurrent, task }) {
+    return Promise.resolve(previous)
+        .catch(() => undefined)
+        .then(() => (typeof isCurrent === 'function' && isCurrent() ? task() : undefined));
 }

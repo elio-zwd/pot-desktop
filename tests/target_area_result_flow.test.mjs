@@ -7,11 +7,14 @@ import {
     createAutoCopyText,
     createRequestState,
     createTranslatePluginOptions,
+    decideLocalCheckpointCommit,
     decideRequestRejection,
     decideResultCommit,
     isRequestCurrent,
+    queueCurrentRequestEffect,
     recordStreamResult,
     resolveTrustedCopyText,
+    RESULT_STAGE_V1,
 } from '../src/window/Translate/components/TargetArea/result_flow.js';
 
 const v2Result = (copyText = '完整 copyText') => ({
@@ -53,12 +56,67 @@ test('插件 options 在顶层加入独立 host 且不修改 config', () => {
         name: 'pot-desktop',
         resultSchemas: ['pot.plugin-result.v2'],
         configSchemaVersion: 2,
+        pluginApis: ['pot.plugin-invoke.translate.v1'],
+        resultStages: ['pot.result-stage.v1'],
     });
     assert.notEqual(first, second);
     assert.notEqual(first.host, second.host);
     assert.notEqual(first.host.resultSchemas, second.host.resultSchemas);
     assert.equal(Object.hasOwn(config, 'host'), false);
     assert.deepEqual(config, before);
+});
+
+test('本地完成检查点只接受当前请求的受控阶段，并使用显式复制全文', () => {
+    const metadata = {
+        schema: RESULT_STAGE_V1,
+        stage: 'local-complete',
+        copyText: '本地可复制全文',
+    };
+    assert.deepEqual(
+        decideLocalCheckpointCommit({
+            activeRequestId: 'request-a',
+            requestId: 'request-a',
+            value: '展示中的 AI 加载提示',
+            metadata,
+            checkpointCommitted: false,
+        }),
+        { trustedCopyText: '本地可复制全文' }
+    );
+    assert.equal(
+        decideLocalCheckpointCommit({
+            activeRequestId: 'request-a',
+            requestId: 'request-a',
+            value: v2Result('本地全文'),
+            metadata,
+            checkpointCommitted: true,
+        }),
+        null
+    );
+});
+
+test('普通流式元数据、过期请求和不安全阶段字段不触发本地副作用', () => {
+    const valid = { schema: RESULT_STAGE_V1, stage: 'local-complete' };
+    assert.equal(
+        decideLocalCheckpointCommit({
+            activeRequestId: 'request-b', requestId: 'request-a', value: v2Result(),
+            metadata: valid, checkpointCommitted: false,
+        }),
+        null
+    );
+    assert.equal(
+        decideLocalCheckpointCommit({
+            activeRequestId: 'request-a', requestId: 'request-a', value: v2Result(),
+            metadata: { ...valid, arbitrary: true }, checkpointCommitted: false,
+        }),
+        null
+    );
+    assert.equal(
+        decideLocalCheckpointCommit({
+            activeRequestId: 'request-a', requestId: 'request-a', value: legacyResult,
+            metadata: valid, checkpointCommitted: false,
+        }),
+        null
+    );
 });
 
 test('请求 ID 只允许当前请求提交', () => {
@@ -436,6 +494,48 @@ test('最终副作用只读取 trustedCopyText 并保留流式结果', () => {
     assert.doesNotMatch(targetAreaSource, /JSON\.stringify\(result/);
     assert.doesNotMatch(targetAreaSource, /String\(result\)/);
     assert.doesNotMatch(resultFlowSource, /toString\s*\(/);
+});
+
+test('历史与剪贴板副作用串行执行，失效请求在执行前被跳过', async () => {
+    const events = [];
+    let current = 'request-a';
+    let releaseFirst;
+    const first = queueCurrentRequestEffect(Promise.resolve(), {
+        isCurrent: () => current === 'request-a',
+        task: async () => {
+            events.push('local-start');
+            await new Promise((resolve) => { releaseFirst = resolve; });
+            events.push('local-end');
+        },
+    });
+    const second = queueCurrentRequestEffect(first, {
+        isCurrent: () => current === 'request-a',
+        task: async () => { events.push('final'); },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.deepEqual(events, ['local-start']);
+    releaseFirst();
+    await second;
+    assert.deepEqual(events, ['local-start', 'local-end', 'final']);
+
+    current = 'request-b';
+    const stale = queueCurrentRequestEffect(Promise.resolve(), {
+        isCurrent: () => current === 'request-a',
+        task: async () => { events.push('stale'); },
+    });
+    await stale;
+    assert.doesNotMatch(events.join(','), /stale/);
+});
+
+test('本地检查点与最终结果都经过当前请求门禁，普通流式不触发落盘', () => {
+    assert.match(targetAreaSource, /const localCheckpointCommittedRef = useRef\(false\)/);
+    assert.match(targetAreaSource, /const historyWriteQueueRef = useRef\(Promise\.resolve\(\)\)/);
+    assert.match(targetAreaSource, /const clipboardWriteQueueRef = useRef\(Promise\.resolve\(\)\)/);
+    assert.match(targetAreaSource, /queueCurrentRequestEffect\(historyWriteQueueRef\.current/);
+    assert.match(targetAreaSource, /queueCurrentRequestEffect\(clipboardWriteQueueRef\.current/);
+    assert.match(targetAreaSource, /decideLocalCheckpointCommit\(\{/);
+    assert.match(targetAreaSource, /setResult: \(value, metadata\)/);
+    assert.match(targetAreaSource, /runCommittedSideEffects\(/);
 });
 
 test('新请求重置渲染器，同请求流式更新沿用稳定 key', () => {

@@ -52,9 +52,11 @@ import TranslationResult from '../TranslationResult';
 import {
     createAutoCopyText,
     createTranslatePluginOptions,
+    decideLocalCheckpointCommit,
     decideRequestRejection,
     decideResultCommit,
     isRequestCurrent,
+    queueCurrentRequestEffect,
     resolveTrustedCopyText,
 } from './result_flow';
 
@@ -111,6 +113,9 @@ export default function TargetArea(props) {
 
     const activeRequestIdRef = useRef(null);
     const latestStreamResultRef = useRef(null);
+    const localCheckpointCommittedRef = useRef(false);
+    const historyWriteQueueRef = useRef(Promise.resolve());
+    const clipboardWriteQueueRef = useRef(Promise.resolve());
     const textAreaRef = useRef();
     const { t } = useTranslation();
     const toastStyle = useToastStyle();
@@ -143,12 +148,14 @@ export default function TargetArea(props) {
     const invalidateCurrentRequest = () => {
         activeRequestIdRef.current = null;
         latestStreamResultRef.current = null;
+        localCheckpointCommittedRef.current = false;
     };
 
     const beginRequest = () => {
         const requestId = nanoid();
         activeRequestIdRef.current = requestId;
         latestStreamResultRef.current = null;
+        localCheckpointCommittedRef.current = false;
         setResultRequestId(requestId);
         setResult('');
         setError('');
@@ -200,7 +207,37 @@ export default function TargetArea(props) {
         }
     };
 
-    const runFinalSideEffects = ({
+    const queueHistoryWrite = (payload) => {
+        const next = queueCurrentRequestEffect(historyWriteQueueRef.current, {
+            isCurrent: () => isRequestCurrent(activeRequestIdRef.current, payload.requestId),
+            task: () => addToHistory(payload),
+        });
+        historyWriteQueueRef.current = next;
+        void next.catch(() => {
+            logError('Failed to write translation history');
+        });
+    };
+
+    const queueClipboardWrite = ({ requestId, clipboardText }) => {
+        const next = queueCurrentRequestEffect(clipboardWriteQueueRef.current, {
+            isCurrent: () => isRequestCurrent(activeRequestIdRef.current, requestId),
+            task: async () => {
+                await writeText(clipboardText);
+                if (hideWindow && isRequestCurrent(activeRequestIdRef.current, requestId)) {
+                    await sendNotification({
+                        title: t('common.write_clipboard'),
+                        body: clipboardText,
+                    });
+                }
+            },
+        });
+        clipboardWriteQueueRef.current = next;
+        void next.catch(() => {
+            logError('Failed to auto-copy translation result');
+        });
+    };
+
+    const runCommittedSideEffects = ({
         requestId,
         inputText,
         historySource,
@@ -213,15 +250,13 @@ export default function TargetArea(props) {
         }
 
         if (!historyDisable) {
-            void addToHistory({
+            queueHistoryWrite({
                 requestId,
                 text: inputText,
                 source: historySource,
                 target: historyTarget,
                 serviceInstanceKey,
                 result: trustedCopyText,
-            }).catch(() => {
-                logError('Failed to write translation history');
             });
         }
 
@@ -241,25 +276,10 @@ export default function TargetArea(props) {
             return;
         }
 
-        void writeText(clipboardText)
-            .then(() => {
-                if (
-                    hideWindow &&
-                    isRequestCurrent(activeRequestIdRef.current, requestId)
-                ) {
-                    return sendNotification({
-                        title: t('common.write_clipboard'),
-                        body: clipboardText,
-                    });
-                }
-                return undefined;
-            })
-            .catch(() => {
-                logError('Failed to auto-copy final translation result');
-            });
+        queueClipboardWrite({ requestId, clipboardText });
     };
 
-    const commitStreamResult = (requestId, value, revealResult) => {
+    const commitStreamResult = (requestId, value, revealResult, metadata, context) => {
         const decision = decideResultCommit({
             activeRequestId: activeRequestIdRef.current,
             requestId,
@@ -275,6 +295,22 @@ export default function TargetArea(props) {
         latestStreamResultRef.current = decision.result;
         setResult(decision.result);
         revealResult();
+
+        const checkpoint = decideLocalCheckpointCommit({
+            activeRequestId: activeRequestIdRef.current,
+            requestId,
+            value: decision.result,
+            metadata,
+            checkpointCommitted: localCheckpointCommittedRef.current,
+        });
+        if (checkpoint !== null && context) {
+            localCheckpointCommittedRef.current = true;
+            runCommittedSideEffects({
+                requestId,
+                ...context,
+                trustedCopyText: checkpoint.trustedCopyText,
+            });
+        }
     };
 
     const commitFinalResult = ({ requestId, value, context, revealResult }) => {
@@ -306,7 +342,7 @@ export default function TargetArea(props) {
         }
 
         if (decision.trustedCopyText !== null) {
-            runFinalSideEffects({
+            runCommittedSideEffects({
                 requestId,
                 ...context,
                 trustedCopyText: decision.trustedCopyText,
@@ -376,7 +412,8 @@ export default function TargetArea(props) {
                 const options = createTranslatePluginOptions({
                     config: instanceConfig,
                     detect: pluginDetectOption,
-                    setResult: (value) => commitStreamResult(requestId, value, revealResult),
+                    setResult: (value, metadata) =>
+                        commitStreamResult(requestId, value, revealResult, metadata, context),
                     utils,
                 });
                 Promise.resolve(
