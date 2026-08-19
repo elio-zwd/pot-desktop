@@ -551,6 +551,13 @@ test('工具栏与反向翻译只使用可信 resultCopyText 且不追加空格�
     assert.doesNotMatch(targetAreaSource, /result\.trim\(\)/);
 });
 
+test('左右对照结果单独使用浅色卡片背景，不影响普通翻译结果', () => {
+    assert.match(targetAreaSource, /const usesPairedResultPresentation = useMemo\(/);
+    assert.match(targetAreaSource, /result\.sections\.some\(\(section\) => section\?\.paired !== undefined\)/);
+    assert.match(targetAreaSource, /usesPairedResultPresentation \? 'border border-primary-100 bg-default-50 shadow-sm' : ''/);
+    assert.match(targetAreaSource, /usesPairedResultPresentation \? 'bg-default-50\/70' : ''/);
+});
+
 test('源文本自动复制与通知绑定当前请求', () => {
     assert.match(targetAreaSource, /void startInitialTranslation\(\);\s*const requestId = activeRequestIdRef\.current/);
     assert.match(

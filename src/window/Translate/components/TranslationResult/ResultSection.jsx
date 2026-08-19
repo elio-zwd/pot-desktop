@@ -24,6 +24,8 @@ const PAIRED_SOURCE_STYLES = {
     ai: 'border-secondary-200 bg-secondary-50 text-secondary-700 dark:border-secondary-700 dark:bg-secondary-950 dark:text-secondary-300',
 };
 
+const PAIRED_DIVIDER_CLASS = 'border-primary-100/80 dark:border-primary-800/70';
+
 function PairedLabel({ label, source }) {
     return (
         <span
@@ -104,7 +106,7 @@ function PairedSummarySection({ section, appFontSize, onCopyText, copyLabel }) {
                     <CopyButton text={section.copyText} onCopyText={onCopyText} copyLabel={copyLabel} />
                 </div>
             </div>
-            <div className='min-w-0 border-t border-divider pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0'>
+            <div className={`min-w-0 border-t pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 ${PAIRED_DIVIDER_CLASS}`}>
                 <PairedLabel label={paired.label} source={paired.source} />
                 {paired.state === 'loading' ? (
                     <LoadingPlaceholder />
@@ -194,12 +196,12 @@ function DictionarySection({ section, appFontSize, onCopyText, copyLabel }) {
 
 function PairedDictionarySection({ section, appFontSize }) {
     return (
-        <div className='min-w-0 overflow-hidden rounded-medium border border-divider'>
-            <div className='grid grid-cols-1 border-b border-divider sm:grid-cols-2'>
+        <div className={`min-w-0 overflow-hidden rounded-medium border bg-content1 ${PAIRED_DIVIDER_CLASS}`}>
+            <div className={`grid grid-cols-1 border-b bg-primary-50/30 sm:grid-cols-2 ${PAIRED_DIVIDER_CLASS}`}>
                 <div className='px-3 py-2 sm:pr-4'>
                     <PairedLabel label='本地词典' source='local' />
                 </div>
-                <div className='border-t border-divider px-3 py-2 sm:border-l sm:border-t-0 sm:pl-4'>
+                <div className={`border-t px-3 py-2 sm:border-l sm:border-t-0 sm:pl-4 ${PAIRED_DIVIDER_CLASS}`}>
                     <PairedLabel label={section.paired.label} source={section.paired.source} />
                 </div>
             </div>
@@ -208,7 +210,7 @@ function PairedDictionarySection({ section, appFontSize }) {
                 return (
                     <div
                         key={`${section.id}-item-${index}`}
-                        className='grid min-w-0 grid-cols-1 border-b border-divider last:border-b-0 sm:grid-cols-2'
+                        className={`grid min-w-0 grid-cols-1 border-b last:border-b-0 sm:grid-cols-2 ${PAIRED_DIVIDER_CLASS}`}
                     >
                         <div className='min-w-0 px-3 py-3 sm:pr-4'>
                             <div
@@ -232,7 +234,7 @@ function PairedDictionarySection({ section, appFontSize }) {
                                 {item.meaning}
                             </div>
                         </div>
-                        <div className='min-w-0 border-t border-divider px-3 py-3 sm:border-l sm:border-t-0 sm:pl-4'>
+                        <div className={`min-w-0 border-t px-3 py-3 sm:border-l sm:border-t-0 sm:pl-4 ${PAIRED_DIVIDER_CLASS}`}>
                             {paired?.state === 'loading' ? (
                                 <LoadingPlaceholder />
                             ) : paired?.content ? (
@@ -314,11 +316,21 @@ function SectionContent({ section, appFontSize, onCopyText, copyLabel }) {
 
 export default function ResultSection({ section, appFontSize, onCopyText, copyLabel }) {
     const [collapsed, setCollapsed] = useState(section.defaultCollapsed);
-    const statusClass = section.type === 'status' ? STATUS_STYLES[section.severity] : 'border-divider bg-content2/50';
+    const isPaired = section.paired !== undefined;
+    const statusClass =
+        section.type === 'status'
+            ? STATUS_STYLES[section.severity]
+            : isPaired
+              ? 'border-primary-100 bg-content1 shadow-sm'
+              : 'border-divider bg-content2/50';
 
     return (
         <section className={`min-w-0 overflow-hidden rounded-large border ${statusClass}`}>
-            <div className='flex min-w-0 items-center justify-between gap-2 px-3 py-2'>
+            <div
+                className={`flex min-w-0 items-center justify-between gap-2 px-3 py-2 ${
+                    isPaired ? 'bg-primary-50/30' : ''
+                }`}
+            >
                 <div className='flex min-w-0 items-center gap-2'>
                     {section.collapsible && (
                         <Button
@@ -346,7 +358,11 @@ export default function ResultSection({ section, appFontSize, onCopyText, copyLa
                 </div>
             </div>
             {!collapsed && (
-                <div className='min-w-0 border-t border-divider px-3 py-3'>
+                <div
+                    className={`min-w-0 border-t px-3 py-3 ${
+                        isPaired ? PAIRED_DIVIDER_CLASS : 'border-divider'
+                    }`}
+                >
                     <SectionContent
                         section={section}
                         appFontSize={appFontSize}

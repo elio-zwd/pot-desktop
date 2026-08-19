@@ -124,6 +124,13 @@ export default function TargetArea(props) {
 
     const resultCopyText = useMemo(() => resolveTrustedCopyText(result) ?? '', [result]);
     const isStructuredResult = isPluginResultV2(result);
+    const usesPairedResultPresentation = useMemo(
+        () =>
+            isStructuredResult &&
+            Array.isArray(result.sections) &&
+            result.sections.some((section) => section?.paired !== undefined),
+        [isStructuredResult, result]
+    );
     const canUseResultText = resultCopyText !== '';
     const canSpeakResult =
         typeof result === 'string'
@@ -621,10 +628,17 @@ export default function TargetArea(props) {
     });
 
     return (
-        <Card shadow='none' className='rounded-[10px]'>
+        <Card
+            shadow='none'
+            className={`rounded-[10px] ${
+                usesPairedResultPresentation ? 'border border-primary-100 bg-default-50 shadow-sm' : ''
+            }`}
+        >
             <Toaster />
             <CardHeader
-                className={`flex justify-between py-1 px-0 bg-content2 h-[30px] ${hide ? 'rounded-[10px]' : 'rounded-t-[10px]'}`}
+                className={`flex h-[30px] justify-between px-0 py-1 ${
+                    usesPairedResultPresentation ? 'border-b border-primary-100 bg-content1' : 'bg-content2'
+                } ${hide ? 'rounded-[10px]' : 'rounded-t-[10px]'}`}
                 {...drag}
             >
                 <div className='flex'>
@@ -737,7 +751,11 @@ export default function TargetArea(props) {
             </CardHeader>
             <animated.div style={{ ...springs }}>
                 <div ref={boundRef}>
-                    <CardBody className={`p-[12px] pb-0 ${hide && 'h-0 p-0'}`}>
+                    <CardBody
+                        className={`p-[12px] pb-0 ${usesPairedResultPresentation ? 'bg-default-50/70' : ''} ${
+                            hide && 'h-0 p-0'
+                        }`}
+                    >
                         <TranslationResult
                             key={resultRequestId}
                             result={result}
@@ -759,7 +777,9 @@ export default function TargetArea(props) {
                             ))}
                     </CardBody>
                     <CardFooter
-                        className={`bg-content1 rounded-none rounded-b-[10px] flex px-[12px] p-[5px] ${hide && 'hidden'}`}
+                        className={`flex rounded-none rounded-b-[10px] px-[12px] p-[5px] ${
+                            usesPairedResultPresentation ? 'border-t border-primary-100 bg-content1' : 'bg-content1'
+                        } ${hide && 'hidden'}`}
                     >
                         <ButtonGroup>
                             <Tooltip content={t('translate.speak')}>
