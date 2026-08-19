@@ -60,12 +60,12 @@ function normalizeCopyText(value, fallback = '') {
     return text || normalizePrimitive(fallback, PLUGIN_RESULT_SCHEMA_LIMITS.copyText, true);
 }
 
-function normalizePairedContent(value, { allowEmpty = false } = {}) {
+function normalizePairedContent(value, { allowEmpty = false, requireContentWhenComplete = true } = {}) {
     if (!isPlainObject(value)) return null;
     const state = PAIRED_STATES.has(value.state) ? value.state : 'complete';
     const content = normalizeOptionalText(value.content);
     if (!allowEmpty && !content) return null;
-    if (state === 'complete' && !content) return null;
+    if (state === 'complete' && !content && requireContentWhenComplete) return null;
     return {
         label: normalizePrimitive(value.label, PLUGIN_RESULT_SCHEMA_LIMITS.text) || 'AI 翻译',
         content,
@@ -187,7 +187,10 @@ export function normalizePluginResultSection(section, index = 0) {
         const items = normalizeItems(section.items, normalizeDictionaryItem);
         if (items.length === 0) return null;
         const result = { id, type, title, items, ...collapsible };
-        const paired = normalizePairedContent(section.paired, { allowEmpty: true });
+        const paired = normalizePairedContent(section.paired, {
+            allowEmpty: true,
+            requireContentWhenComplete: false,
+        });
         if (paired) result.paired = paired;
         return result;
     }

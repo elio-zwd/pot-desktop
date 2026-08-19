@@ -172,6 +172,20 @@ test('成对内容拒绝无文本的完成状态', () => {
     assert.equal('paired' in section, false);
 });
 
+test('逐词对照栏允许完成态只提供受控标题', () => {
+    const section = normalizePluginResultSection({
+        type: 'dictionary',
+        items: [{ token: 'get', meaning: '获取' }],
+        paired: { label: 'AI 翻译', content: '', source: 'ai', state: 'complete' },
+    });
+    assert.deepEqual(section.paired, {
+        label: 'AI 翻译',
+        content: '',
+        source: 'ai',
+        state: 'complete',
+    });
+});
+
 test('缺少顶层 copyText 时从 section 生成纯文本回退', () => {
     const normalized = normalizePluginResultV2({
         schemaVersion: 2,
