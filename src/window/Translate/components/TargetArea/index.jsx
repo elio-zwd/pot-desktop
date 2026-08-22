@@ -630,24 +630,26 @@ export default function TargetArea(props) {
     return (
         <Card
             shadow='none'
-            className={`rounded-[10px] ${
+            className={`rounded-2xl transition-all duration-200 ${
                 usesPairedResultPresentation ? 'border border-primary-100 bg-default-50 shadow-sm' : ''
             }`}
         >
             <Toaster />
             <CardHeader
-                className={`flex h-[30px] justify-between px-0 py-1 ${
-                    usesPairedResultPresentation ? 'border-b border-primary-100 bg-content1' : 'bg-content2'
-                } ${hide ? 'rounded-[10px]' : 'rounded-t-[10px]'}`}
+                className={`flex h-[32px] justify-between px-2 py-1 transition-colors ${
+                    usesPairedResultPresentation
+                        ? 'border-b border-default-100 bg-default-50/40'
+                        : 'border-b border-default-100/50 bg-default-50/20'
+                } ${hide ? 'rounded-2xl border-b-0' : 'rounded-t-2xl'}`}
                 {...drag}
             >
-                <div className='flex'>
+                <div className='flex items-center'>
                     <Dropdown>
                         <DropdownTrigger>
                             <Button
                                 size='sm'
-                                variant='solid'
-                                className='bg-transparent'
+                                variant='light'
+                                className='h-6 min-h-6 px-2 text-xs font-medium text-default-700 hover:text-default-900 rounded-md'
                                 startContent={
                                     whetherPluginService(currentTranslateServiceInstanceKey) ? (
                                         <img
@@ -655,7 +657,7 @@ export default function TargetArea(props) {
                                                 pluginList.translate[getServiceName(currentTranslateServiceInstanceKey)]
                                                     .icon
                                             }
-                                            className='h-[20px] my-auto'
+                                            className='h-[16px] w-[16px] my-auto rounded-xs'
                                         />
                                     ) : (
                                         <img
@@ -663,7 +665,7 @@ export default function TargetArea(props) {
                                                 builtinServices[getServiceName(currentTranslateServiceInstanceKey)].info
                                                     .icon
                                             }
-                                            className='h-[20px] my-auto'
+                                            className='h-[16px] w-[16px] my-auto rounded-xs'
                                         />
                                     )
                                 }
@@ -700,12 +702,12 @@ export default function TargetArea(props) {
                                         whetherPluginService(instanceKey) ? (
                                             <img
                                                 src={pluginList.translate[getServiceName(instanceKey)].icon}
-                                                className='h-[20px] my-auto'
+                                                className='h-[16px] w-[16px] my-auto rounded-xs'
                                             />
                                         ) : (
                                             <img
                                                 src={builtinServices[getServiceName(instanceKey)].info.icon}
-                                                className='h-[20px] my-auto'
+                                                className='h-[16px] w-[16px] my-auto rounded-xs'
                                             />
                                         )
                                     }
@@ -729,22 +731,22 @@ export default function TargetArea(props) {
                     <PulseLoader
                         loading={isLoading}
                         color={resolvedTheme === 'dark' ? semanticColors.dark.default[500] : semanticColors.light.default[500]}
-                        size={8}
-                        cssOverride={{ display: 'inline-block', margin: 'auto', marginLeft: '20px' }}
+                        size={6}
+                        cssOverride={{ display: 'inline-block', margin: 'auto', marginLeft: '12px' }}
                     />
                 </div>
-                <div className='flex'>
+                <div className='flex items-center'>
                     <Button
                         size='sm'
                         isIconOnly
                         variant='light'
-                        className='h-[20px] w-[20px]'
+                        className='h-6 w-6 min-w-6 rounded-md text-default-400 hover:text-default-700'
                         onPress={() => setHide(!hide)}
                     >
                         {hide ? (
-                            <BiExpandVertical className='text-[16px]' />
+                            <BiExpandVertical className='text-[14px]' />
                         ) : (
-                            <BiCollapseVertical className='text-[16px]' />
+                            <BiCollapseVertical className='text-[14px]' />
                         )}
                     </Button>
                 </div>
@@ -752,7 +754,7 @@ export default function TargetArea(props) {
             <animated.div style={{ ...springs }}>
                 <div ref={boundRef}>
                     <CardBody
-                        className={`p-[12px] pb-0 ${usesPairedResultPresentation ? 'bg-default-50/70' : ''} ${
+                        className={`p-3.5 pb-2 ${usesPairedResultPresentation ? 'bg-default-50/70' : ''} ${
                             hide && 'h-0 p-0'
                         }`}
                     >
@@ -777,9 +779,9 @@ export default function TargetArea(props) {
                             ))}
                     </CardBody>
                     <CardFooter
-                        className={`flex rounded-none rounded-b-[10px] px-[12px] p-[5px] ${
-                            usesPairedResultPresentation ? 'border-t border-primary-100 bg-content1' : 'bg-content1'
-                        } ${hide && 'hidden'}`}
+                        className={`flex rounded-none rounded-b-2xl px-3 py-1 border-t border-default-100 bg-default-50/20 ${
+                            hide && 'hidden'
+                        }`}
                     >
                         <ButtonGroup>
                             <Tooltip content={t('translate.speak')}>
@@ -787,6 +789,7 @@ export default function TargetArea(props) {
                                     isIconOnly
                                     variant='light'
                                     size='sm'
+                                    className='h-7 w-7 min-w-7 rounded-md text-default-500 hover:text-default-800'
                                     isDisabled={!canSpeakResult}
                                     onPress={() => {
                                         handleSpeak().catch((reason) => {

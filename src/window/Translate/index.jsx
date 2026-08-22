@@ -4,10 +4,10 @@ import { appWindow, currentMonitor } from '@tauri-apps/api/window';
 import { appConfigDir, join } from '@tauri-apps/api/path';
 import { convertFileSrc } from '@tauri-apps/api/tauri';
 import { Spacer, Button } from '@nextui-org/react';
-import { AiFillCloseCircle } from 'react-icons/ai';
 import React, { useState, useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { BsPinFill } from 'react-icons/bs';
+import { RiPushpinLine, RiPushpinFill } from 'react-icons/ri';
+import { RxCross2 } from 'react-icons/rx';
 
 import LanguageArea from './components/LanguageArea';
 import SourceArea from './components/SourceArea';
@@ -239,13 +239,13 @@ export default function Translate() {
                     className='fixed top-[5px] left-[5px] right-[5px] h-[30px]'
                     data-tauri-drag-region='true'
                 />
-                <div className={`h-[35px] w-full flex ${osType === 'Darwin' ? 'justify-end' : 'justify-between'}`}>
+                <div className='h-[32px] w-full flex items-center justify-end px-2 gap-0.5'>
                     <Button
                         isIconOnly
                         size='sm'
-                        variant='flat'
-                        disableAnimation
-                        className='my-auto bg-transparent'
+                        variant='light'
+                        className='h-7 w-7 min-w-7 rounded-full text-default-400 hover:text-default-700 hover:bg-default-100 transition-colors'
+                        aria-label={pined ? '取消置顶' : '置顶窗口'}
                         onPress={() => {
                             if (pined) {
                                 if (closeOnBlur) {
@@ -259,19 +259,25 @@ export default function Translate() {
                             setPined(!pined);
                         }}
                     >
-                        <BsPinFill className={`text-[20px] ${pined ? 'text-primary' : 'text-default-400'}`} />
+                        {pined ? (
+                            <RiPushpinFill className='text-[16px] text-primary rotate-45 transition-transform' />
+                        ) : (
+                            <RiPushpinLine className='text-[16px] transition-transform hover:scale-110' />
+                        )}
                     </Button>
                     <Button
                         isIconOnly
                         size='sm'
-                        variant='flat'
-                        disableAnimation
-                        className={`my-auto ${osType === 'Darwin' && 'hidden'} bg-transparent`}
+                        variant='light'
+                        className={`h-7 w-7 min-w-7 rounded-full text-default-400 hover:text-danger hover:bg-danger-50 transition-colors ${
+                            osType === 'Darwin' && 'hidden'
+                        }`}
+                        aria-label='关闭'
                         onPress={() => {
                             void appWindow.close();
                         }}
                     >
-                        <AiFillCloseCircle className='text-[20px] text-default-400' />
+                        <RxCross2 className='text-[16px]' />
                     </Button>
                 </div>
                 <div className={`${osType === 'Linux' ? 'h-[calc(100vh-37px)]' : 'h-[calc(100vh-35px)]'} px-[8px]`}>

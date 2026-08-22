@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Chip, Tooltip } from '@nextui-org/react';
 import { BiChevronDown, BiChevronRight } from 'react-icons/bi';
+import { BsCheckCircleFill, BsStars } from 'react-icons/bs';
 import { MdContentCopy } from 'react-icons/md';
 
 const FALLBACK_TITLES = {
@@ -13,27 +14,31 @@ const FALLBACK_TITLES = {
 };
 
 const STATUS_STYLES = {
-    info: 'border-primary-200 bg-primary-50/40',
-    success: 'border-success-200 bg-success-50/40',
-    warning: 'border-warning-200 bg-warning-50/40',
-    error: 'border-danger-200 bg-danger-50/40',
+    info: 'border-blue-200 bg-blue-50/40 dark:border-blue-800 dark:bg-blue-950/30',
+    success: 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-950/30',
+    warning: 'border-amber-200 bg-amber-50/40 dark:border-amber-800 dark:bg-amber-950/30',
+    error: 'border-rose-200 bg-rose-50/40 dark:border-rose-800 dark:bg-rose-950/30',
 };
 
 const PAIRED_SOURCE_STYLES = {
-    local: 'border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-700 dark:bg-primary-950 dark:text-primary-300',
-    ai: 'border-secondary-200 bg-secondary-50 text-secondary-700 dark:border-secondary-700 dark:bg-secondary-950 dark:text-secondary-300',
+    local: 'border-blue-200/70 bg-blue-50 text-blue-600 dark:border-blue-800/60 dark:bg-blue-950/50 dark:text-blue-300',
+    ai: 'border-purple-200/70 bg-purple-50 text-purple-600 dark:border-purple-800/60 dark:bg-purple-950/50 dark:text-purple-300',
 };
 
-const PAIRED_DIVIDER_CLASS = 'border-primary-100/80 dark:border-primary-800/70';
+const PAIRED_DIVIDER_CLASS = 'border-default-200/60 dark:border-default-100/20';
 
 function PairedLabel({ label, source }) {
+    const isLocal = source === 'local';
+    const isAi = source === 'ai';
     return (
         <span
-            className={`inline-flex w-fit items-center rounded-medium border px-2 py-1 text-xs font-semibold ${
-                PAIRED_SOURCE_STYLES[source] || 'border-divider bg-content2 text-default-600'
+            className={`inline-flex w-fit items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-xs font-semibold tracking-wide ${
+                PAIRED_SOURCE_STYLES[source] || 'border-default-200 bg-default-100 text-default-600'
             }`}
         >
-            {label}
+            {isLocal && <BsCheckCircleFill className='text-[11px] text-blue-600 dark:text-blue-400 shrink-0' />}
+            {isAi && <BsStars className='text-[11px] text-purple-600 dark:text-purple-400 shrink-0' />}
+            <span>{label}</span>
         </span>
     );
 }
@@ -42,8 +47,8 @@ function LoadingPlaceholder() {
     return (
         <div className='flex min-h-[44px] items-center' aria-label='AI 翻译加载中' role='status'>
             <div className='w-full animate-pulse space-y-2'>
-                <div className='h-3 w-4/5 rounded-full bg-secondary-200/70 dark:bg-secondary-800/70' />
-                <div className='h-3 w-3/5 rounded-full bg-secondary-100 dark:bg-secondary-900/70' />
+                <div className='h-3 w-4/5 rounded-full bg-purple-200/70 dark:bg-purple-800/60' />
+                <div className='h-3 w-3/5 rounded-full bg-purple-100 dark:bg-purple-900/40' />
             </div>
         </div>
     );
@@ -52,7 +57,7 @@ function LoadingPlaceholder() {
 function SourceChip({ source }) {
     if (!source || source === 'unknown') return null;
     return (
-        <Chip size='sm' variant='flat' className='h-5 shrink-0 text-[10px] uppercase'>
+        <Chip size='sm' variant='flat' className='h-5 shrink-0 text-[10px] uppercase font-mono'>
             {source}
         </Chip>
     );
@@ -66,11 +71,11 @@ function CopyButton({ text, onCopyText, copyLabel }) {
                 isIconOnly
                 size='sm'
                 variant='light'
-                className='h-7 min-h-7 w-7 min-w-7 shrink-0'
+                className='h-6 min-h-6 w-6 min-w-6 shrink-0 rounded-md text-default-400 hover:text-default-700 hover:bg-default-100'
                 aria-label={copyLabel || 'Copy'}
                 onPress={() => onCopyText(text)}
             >
-                <MdContentCopy className='text-[14px]' />
+                <MdContentCopy className='text-[13px]' />
             </Button>
         </Tooltip>
     );
@@ -78,10 +83,10 @@ function CopyButton({ text, onCopyText, copyLabel }) {
 
 function SummarySection({ section, appFontSize, onCopyText, copyLabel }) {
     return (
-        <div className='flex min-w-0 items-start gap-2'>
+        <div className='flex min-w-0 items-start gap-3'>
             <div
-                className='min-w-0 flex-1 whitespace-pre-wrap break-words font-semibold leading-relaxed select-text'
-                style={{ fontSize: `${appFontSize + 2}px` }}
+                className='min-w-0 flex-1 whitespace-pre-wrap break-words font-bold tracking-tight leading-tight select-text text-default-900'
+                style={{ fontSize: `${Math.max(18, appFontSize + 4)}px` }}
             >
                 {section.content}
             </div>
@@ -93,27 +98,39 @@ function SummarySection({ section, appFontSize, onCopyText, copyLabel }) {
 function PairedSummarySection({ section, appFontSize, onCopyText, copyLabel }) {
     const paired = section.paired;
     return (
-        <div className='grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-0'>
-            <div className='min-w-0 space-y-2 sm:pr-4'>
+        <div className='grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-0'>
+            {/* 左侧：本地词典 */}
+            <div className='min-w-0 space-y-2 sm:pr-5'>
                 <PairedLabel label='本地词典' source={section.source} />
-                <div className='flex min-w-0 items-start gap-2'>
-                    <div
-                        className='min-w-0 flex-1 whitespace-pre-wrap break-words font-semibold leading-relaxed select-text'
-                        style={{ fontSize: `${appFontSize + 2}px` }}
+                <div>
+                    <span
+                        className='text-xs font-medium text-default-400 tracking-wider select-none'
+                        style={{ fontSize: `${Math.max(11, appFontSize - 4)}px` }}
                     >
-                        {section.content}
+                        核心释义
+                    </span>
+                    <div className='flex min-w-0 items-start gap-2 mt-1'>
+                        <div
+                            className='min-w-0 flex-1 whitespace-pre-wrap break-words font-bold tracking-tight leading-tight select-text text-default-900'
+                            style={{ fontSize: `${Math.max(20, appFontSize + 6)}px` }}
+                        >
+                            {section.content}
+                        </div>
+                        <CopyButton text={section.copyText} onCopyText={onCopyText} copyLabel={copyLabel} />
                     </div>
-                    <CopyButton text={section.copyText} onCopyText={onCopyText} copyLabel={copyLabel} />
                 </div>
             </div>
-            <div className={`min-w-0 border-t pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 ${PAIRED_DIVIDER_CLASS}`}>
+            {/* 右侧：AI 翻译 */}
+            <div className={`min-w-0 border-t pt-4 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0 ${PAIRED_DIVIDER_CLASS}`}>
                 <PairedLabel label={paired.label} source={paired.source} />
                 {paired.state === 'loading' ? (
-                    <LoadingPlaceholder />
+                    <div className='mt-3'>
+                        <LoadingPlaceholder />
+                    </div>
                 ) : (
                     <div
-                        className='mt-2 whitespace-pre-wrap break-words font-medium leading-relaxed select-text'
-                        style={{ fontSize: `${appFontSize}px` }}
+                        className='mt-3 whitespace-pre-wrap break-words font-normal leading-relaxed select-text text-default-800'
+                        style={{ fontSize: `${Math.max(14, appFontSize)}px` }}
                     >
                         {paired.content}
                     </div>
@@ -125,19 +142,19 @@ function PairedSummarySection({ section, appFontSize, onCopyText, copyLabel }) {
 
 function MetadataSection({ section, appFontSize, onCopyText, copyLabel }) {
     return (
-        <div className='flex min-w-0 flex-col gap-3'>
+        <div className='flex min-w-0 flex-col gap-2.5'>
             {section.items.length > 0 && (
                 <div className='flex min-w-0 flex-col gap-2'>
                     {section.items.map((item, index) => (
                         <div key={`${section.id}-item-${index}`} className='flex min-w-0 flex-wrap items-start gap-2'>
                             <span
-                                className='min-w-[72px] shrink-0 text-default-500'
-                                style={{ fontSize: `${Math.max(10, appFontSize - 2)}px` }}
+                                className='min-w-[72px] shrink-0 text-default-400 font-medium'
+                                style={{ fontSize: `${Math.max(10, appFontSize - 3)}px` }}
                             >
                                 {item.label}
                             </span>
                             <span
-                                className='min-w-0 flex-1 basis-[160px] whitespace-pre-wrap break-words font-medium select-text'
+                                className='min-w-0 flex-1 basis-[160px] whitespace-pre-wrap break-words font-medium select-text text-default-800'
                                 style={{ fontSize: `${appFontSize}px` }}
                             >
                                 {item.value}
@@ -148,9 +165,14 @@ function MetadataSection({ section, appFontSize, onCopyText, copyLabel }) {
                 </div>
             )}
             {section.tokens.length > 0 && (
-                <div className='flex min-w-0 flex-wrap gap-1.5'>
+                <div className='flex min-w-0 flex-wrap gap-1.5 pt-1'>
                     {section.tokens.map((token, index) => (
-                        <Chip key={`${section.id}-token-${index}`} size='sm' variant='flat' className='max-w-full'>
+                        <Chip
+                            key={`${section.id}-token-${index}`}
+                            size='sm'
+                            variant='flat'
+                            className='max-w-full bg-default-100 text-default-700 font-mono text-xs'
+                        >
                             <span className='break-all font-mono'>{token}</span>
                         </Chip>
                     ))}
@@ -162,17 +184,20 @@ function MetadataSection({ section, appFontSize, onCopyText, copyLabel }) {
 
 function DictionarySection({ section, appFontSize, onCopyText, copyLabel }) {
     return (
-        <div className='min-w-0 divide-y divide-divider'>
+        <div className='min-w-0 divide-y divide-default-100'>
             {section.items.map((item, index) => (
-                <div key={`${section.id}-item-${index}`} className='flex min-w-0 flex-wrap items-start gap-2 py-2 first:pt-0 last:pb-0'>
-                    <div className='min-w-[92px] max-w-full shrink-0'>
-                        <div className='break-all font-mono font-semibold select-text' style={{ fontSize: `${appFontSize}px` }}>
+                <div key={`${section.id}-item-${index}`} className='flex min-w-0 flex-wrap items-start gap-3 py-2.5 first:pt-0 last:pb-0'>
+                    <div className='min-w-[96px] max-w-full shrink-0'>
+                        <span
+                            className='inline-block font-mono font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100/70 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/40 select-text'
+                            style={{ fontSize: `${Math.max(12, appFontSize - 2)}px` }}
+                        >
                             {item.token}
-                        </div>
+                        </span>
                         {item.phonetic && (
                             <div
-                                className='break-words text-default-400 select-text'
-                                style={{ fontSize: `${Math.max(10, appFontSize - 2)}px` }}
+                                className='mt-0.5 font-mono text-default-400 select-text'
+                                style={{ fontSize: `${Math.max(10, appFontSize - 3)}px` }}
                             >
                                 {item.phonetic}
                             </div>
@@ -180,7 +205,7 @@ function DictionarySection({ section, appFontSize, onCopyText, copyLabel }) {
                     </div>
                     <div className='min-w-0 flex-1 basis-[160px]'>
                         <div
-                            className='whitespace-pre-wrap break-words select-text'
+                            className='whitespace-pre-wrap break-words select-text text-default-800'
                             style={{ fontSize: `${appFontSize}px` }}
                         >
                             {item.meaning}
@@ -196,56 +221,62 @@ function DictionarySection({ section, appFontSize, onCopyText, copyLabel }) {
 
 function PairedDictionarySection({ section, appFontSize }) {
     return (
-        <div className={`min-w-0 overflow-hidden rounded-medium border bg-content1 ${PAIRED_DIVIDER_CLASS}`}>
-            <div className={`grid grid-cols-1 border-b bg-primary-50/30 sm:grid-cols-2 ${PAIRED_DIVIDER_CLASS}`}>
-                <div className='px-3 py-2 sm:pr-4'>
+        <div className={`min-w-0 overflow-hidden rounded-xl border bg-background ${PAIRED_DIVIDER_CLASS}`}>
+            {/* 表头 */}
+            <div className={`grid grid-cols-1 border-b bg-default-50/60 py-2 sm:grid-cols-2 ${PAIRED_DIVIDER_CLASS}`}>
+                <div className='px-3.5 sm:pr-4'>
                     <PairedLabel label='本地词典' source='local' />
                 </div>
-                <div className={`border-t px-3 py-2 sm:border-l sm:border-t-0 sm:pl-4 ${PAIRED_DIVIDER_CLASS}`}>
+                <div className={`border-t px-3.5 pt-2 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 ${PAIRED_DIVIDER_CLASS}`}>
                     <PairedLabel label={section.paired.label} source={section.paired.source} />
                 </div>
             </div>
+            {/* 数据行 */}
             {section.items.map((item, index) => {
                 const paired = item.paired;
                 return (
                     <div
                         key={`${section.id}-item-${index}`}
-                        className={`grid min-w-0 grid-cols-1 border-b last:border-b-0 sm:grid-cols-2 ${PAIRED_DIVIDER_CLASS}`}
+                        className={`grid min-w-0 grid-cols-1 border-b last:border-b-0 sm:grid-cols-2 hover:bg-default-50/20 transition-colors ${PAIRED_DIVIDER_CLASS}`}
                     >
-                        <div className='min-w-0 px-3 py-3 sm:pr-4'>
-                            <div
-                                className='break-all font-mono font-semibold text-primary select-text'
-                                style={{ fontSize: `${appFontSize}px` }}
-                            >
-                                {item.token}
-                            </div>
-                            {item.phonetic && (
-                                <div
-                                    className='mt-0.5 break-words text-default-400 select-text'
-                                    style={{ fontSize: `${Math.max(10, appFontSize - 2)}px` }}
+                        {/* 左侧：本地词典词条 */}
+                        <div className='min-w-0 px-3.5 py-3 sm:pr-4 flex items-start gap-3'>
+                            <div className='shrink-0 min-w-[70px]'>
+                                <span
+                                    className='inline-block font-mono font-medium px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100/70 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/40 select-text'
+                                    style={{ fontSize: `${Math.max(12, appFontSize - 2)}px` }}
                                 >
-                                    /{item.phonetic.replace(/^\/+|\/+$/g, '')}/
-                                </div>
-                            )}
+                                    {item.token}
+                                </span>
+                                {item.phonetic && (
+                                    <div
+                                        className='mt-1 font-mono text-default-400 select-text'
+                                        style={{ fontSize: `${Math.max(10, appFontSize - 3)}px` }}
+                                    >
+                                        /{item.phonetic.replace(/^\/+|\/+$/g, '')}/
+                                    </div>
+                                )}
+                            </div>
                             <div
-                                className='mt-1 whitespace-pre-wrap break-words select-text'
-                                style={{ fontSize: `${appFontSize}px` }}
+                                className='min-w-0 flex-1 whitespace-pre-wrap break-words text-default-800 pt-0.5 select-text'
+                                style={{ fontSize: `${Math.max(13, appFontSize - 1)}px` }}
                             >
                                 {item.meaning}
                             </div>
                         </div>
-                        <div className={`min-w-0 border-t px-3 py-3 sm:border-l sm:border-t-0 sm:pl-4 ${PAIRED_DIVIDER_CLASS}`}>
+                        {/* 右侧：AI 翻译词条 */}
+                        <div className={`min-w-0 border-t px-3.5 py-3 sm:border-l sm:border-t-0 sm:pl-4 ${PAIRED_DIVIDER_CLASS}`}>
                             {paired?.state === 'loading' ? (
                                 <LoadingPlaceholder />
                             ) : paired?.content ? (
                                 <div
-                                    className='whitespace-pre-wrap break-words select-text'
-                                    style={{ fontSize: `${appFontSize}px` }}
+                                    className='whitespace-pre-wrap break-words text-default-800 pt-0.5 select-text leading-relaxed'
+                                    style={{ fontSize: `${Math.max(13, appFontSize - 1)}px` }}
                                 >
                                     {paired.content}
                                 </div>
                             ) : (
-                                <span className='text-default-400' style={{ fontSize: `${appFontSize}px` }}>
+                                <span className='text-default-400 pt-0.5 block' style={{ fontSize: `${appFontSize}px` }}>
                                     —
                                 </span>
                             )}
@@ -259,18 +290,18 @@ function PairedDictionarySection({ section, appFontSize }) {
 
 function CodeListSection({ section, appFontSize, onCopyText, copyLabel }) {
     return (
-        <div className='flex min-w-0 flex-col gap-1.5'>
+        <div className='flex min-w-0 flex-col gap-2'>
             {section.items.map((item, index) => (
-                <div key={`${section.id}-item-${index}`} className='flex min-w-0 flex-wrap items-center gap-2'>
+                <div key={`${section.id}-item-${index}`} className='flex min-w-0 flex-wrap items-center gap-2.5'>
                     <span
-                        className='min-w-[72px] shrink-0 text-default-500'
-                        style={{ fontSize: `${Math.max(10, appFontSize - 2)}px` }}
+                        className='min-w-[72px] shrink-0 text-default-400 font-medium'
+                        style={{ fontSize: `${Math.max(10, appFontSize - 3)}px` }}
                     >
                         {item.label}
                     </span>
                     <code
-                        className='min-w-0 flex-1 basis-[180px] whitespace-pre-wrap break-all rounded-medium bg-content1 px-2 py-1 select-text'
-                        style={{ fontSize: `${Math.max(10, appFontSize - 1)}px` }}
+                        className='min-w-0 flex-1 basis-[180px] whitespace-pre-wrap break-all rounded-md bg-default-100/70 border border-default-200/50 px-2 py-1 font-mono select-text text-default-900'
+                        style={{ fontSize: `${Math.max(11, appFontSize - 1)}px` }}
                     >
                         {item.value}
                     </code>
@@ -283,9 +314,9 @@ function CodeListSection({ section, appFontSize, onCopyText, copyLabel }) {
 
 function TextSection({ section, appFontSize, onCopyText, copyLabel }) {
     return (
-        <div className='flex min-w-0 items-start gap-2'>
+        <div className='flex min-w-0 items-start gap-2.5'>
             <div
-                className='min-w-0 flex-1 whitespace-pre-wrap break-words select-text'
+                className='min-w-0 flex-1 whitespace-pre-wrap break-words select-text text-default-800 leading-relaxed'
                 style={{ fontSize: `${appFontSize}px` }}
             >
                 {section.content}
@@ -317,18 +348,34 @@ function SectionContent({ section, appFontSize, onCopyText, copyLabel }) {
 export default function ResultSection({ section, appFontSize, onCopyText, copyLabel }) {
     const [collapsed, setCollapsed] = useState(section.defaultCollapsed);
     const isPaired = section.paired !== undefined;
+    const isSummary = section.type === 'summary';
+
     const statusClass =
         section.type === 'status'
             ? STATUS_STYLES[section.severity]
             : isPaired
-              ? 'border-primary-100 bg-content1 shadow-sm'
-              : 'border-divider bg-content2/50';
+              ? 'border-default-200/60 bg-background shadow-xs'
+              : 'border-default-200/40 bg-background';
+
+    // 核心释义（summary）在非折叠状态下采用通透卡片设计
+    if (isSummary && !section.collapsible && isPaired) {
+        return (
+            <section className='min-w-0 rounded-2xl border border-default-200/60 bg-background p-4 shadow-xs'>
+                <SectionContent
+                    section={section}
+                    appFontSize={appFontSize}
+                    onCopyText={onCopyText}
+                    copyLabel={copyLabel}
+                />
+            </section>
+        );
+    }
 
     return (
-        <section className={`min-w-0 overflow-hidden rounded-large border ${statusClass}`}>
+        <section className={`min-w-0 overflow-hidden rounded-xl border ${statusClass}`}>
             <div
-                className={`flex min-w-0 items-center justify-between gap-2 px-3 py-2 ${
-                    isPaired ? 'bg-primary-50/30' : ''
+                className={`flex min-w-0 items-center justify-between gap-2 px-3.5 py-2.5 ${
+                    isPaired ? 'bg-default-50/50' : 'bg-default-50/30'
                 }`}
             >
                 <div className='flex min-w-0 items-center gap-2'>
@@ -337,21 +384,21 @@ export default function ResultSection({ section, appFontSize, onCopyText, copyLa
                             isIconOnly
                             size='sm'
                             variant='light'
-                            className='h-6 min-h-6 w-6 min-w-6 shrink-0'
+                            className='h-6 min-h-6 w-6 min-w-6 shrink-0 text-default-500 hover:text-default-800'
                             aria-label={collapsed ? 'Expand section' : 'Collapse section'}
                             onPress={() => setCollapsed((value) => !value)}
                         >
-                            {collapsed ? <BiChevronRight /> : <BiChevronDown />}
+                            {collapsed ? <BiChevronRight className='text-[16px]' /> : <BiChevronDown className='text-[16px]' />}
                         </Button>
                     )}
-                    <h3 className='min-w-0 break-words font-semibold' style={{ fontSize: `${appFontSize}px` }}>
+                    <h3 className='min-w-0 break-words font-semibold text-default-800' style={{ fontSize: `${appFontSize}px` }}>
                         {section.title || FALLBACK_TITLES[section.type]}
                     </h3>
                 </div>
-                <div className='flex shrink-0 items-center gap-1'>
+                <div className='flex shrink-0 items-center gap-1.5'>
                     <SourceChip source={section.source} />
                     {section.type === 'status' && (
-                        <Chip size='sm' variant='flat' className='h-5 text-[10px] uppercase'>
+                        <Chip size='sm' variant='flat' className='h-5 text-[10px] uppercase font-mono'>
                             {section.severity}
                         </Chip>
                     )}
@@ -359,8 +406,8 @@ export default function ResultSection({ section, appFontSize, onCopyText, copyLa
             </div>
             {!collapsed && (
                 <div
-                    className={`min-w-0 border-t px-3 py-3 ${
-                        isPaired ? PAIRED_DIVIDER_CLASS : 'border-divider'
+                    className={`min-w-0 border-t px-3.5 py-3.5 ${
+                        isPaired ? PAIRED_DIVIDER_CLASS : 'border-default-100'
                     }`}
                 >
                     <SectionContent
